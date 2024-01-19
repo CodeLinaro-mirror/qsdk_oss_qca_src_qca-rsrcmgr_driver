@@ -35,6 +35,9 @@
 #define NETSTANDBY_MSG_MAX_INTERFACES 16
 #define	NETSTANDBY_MSG_IFNAME_MAX 128
 
+/* Config file name is in following format: wlanX:<filepath> */
+#define NETSTANDBY_MSG_CONF_FILENAME_MAX 256
+
 /*
  * netstandby_trigger_rule
  *	Trigger rule
@@ -57,6 +60,15 @@ struct netstandby_nss_info {
 	uint8_t switch_port_id;	/**< ID (1 to 4) of the port of a switch which is used for trigger (optional) */
 };
 
+#ifndef RM_QCA_PROP
+struct netstandby_conf_file {
+	char ifname[NETSTANDBY_MSG_IFNAME_MAX];
+	char filename[NETSTANDBY_MSG_CONF_FILENAME_MAX];
+	struct netstandby_conf_file *prev;
+	struct netstandby_conf_file *next;
+};
+#endif
+
 /*
  * netstandby_enter_msg()
  */
@@ -65,6 +77,9 @@ struct netstandby_enter_msg {
 	struct netstandby_trigger_rule trigger_rule;		/**< Trigger rule */
 	char designated_wakeup_intf[NETSTANDBY_MSG_MAX_INTERFACES][NETSTANDBY_MSG_IFNAME_MAX];	/**< List of designated interface names for trigger based wakeup */
 	int iface_cnt;		/**< Number of designated wakeup interfaces configured */
+#ifndef RM_QCA_PROP
+	struct netstandby_conf_file *conf_file; /**< Linked list of config files */
+#endif
 };
 
 /*
