@@ -85,7 +85,7 @@ static inline enum netstandby_iface_type netstandby_get_dev_type(char *name, str
 		dev_put(dev);
 		return NETSTANDBY_IFACE_TYPE_NSS;
 	} else if (dev->ieee80211_ptr) {
-#if defined(NETSTANDBY_WIFI_SS_ENABLE)
+#ifdef RM_QCA_PROP
 		dev_put(dev);
 		return NETSTANDBY_IFACE_TYPE_WIFI;
 #else
@@ -335,7 +335,7 @@ enum netstandby_nl_ret netstandby_init_msg_send(struct netstandby_nl_msg *nl_msg
 			}
 
 		}
-#if defined(NETSTANDBY_WIFI_SS_ENABLE)
+#ifdef RM_QCA_PROP
 		else if (i == NETSTANDBY_IFACE_TYPE_WIFI) {
 			info = &gbl_ctx->info[NETSTANDBY_SUBSYSTEM_TYPE_WIFI];
 			info->init_info.enter_cmp_cb = netstandby_enter_completion_event;
@@ -401,7 +401,7 @@ enum netstandby_nl_ret netstandby_enter_msg_send(struct netstandby_nl_msg *nl_ms
 				info->enter_info.iface_cnt++;
 				break;
 
-#if defined(NETSTANDBY_WIFI_SS_ENABLE)
+#ifdef RM_QCA_PROP
 			case NETSTANDBY_IFACE_TYPE_WIFI:
 				info = &gbl_ctx->info[NETSTANDBY_SUBSYSTEM_TYPE_WIFI];
 				info->enter_info.dev[i] = return_dev;
@@ -459,7 +459,7 @@ enum netstandby_nl_ret netstandby_enter_msg_send(struct netstandby_nl_msg *nl_ms
 			}
 		}
 	}
-#if defined(NETSTANDBY_WIFI_SS_ENABLE)
+#ifdef RM_QCA_PROP
 	else if (nl_msg->type == NETSTANDBY_SUBSYSTEM_TYPE_WIFI) {
 		info = &gbl_ctx->info[NETSTANDBY_SUBSYSTEM_TYPE_WIFI];
 	}
