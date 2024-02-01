@@ -76,22 +76,20 @@ static inline enum netstandby_iface_type netstandby_get_dev_type(char *name, str
 	*return_dev = dev;
 
 	port_id = ppe_drv_port_num_from_dev(dev);
-	if (port_id < 0) {
-		dev_put(dev);
-		return NETSTANDBY_IFACE_TYPE_MAX;
-	}
 
-	if (port_id < PPE_DRV_PHYSICAL_MAX) {
+	if (port_id >=0 && port_id < PPE_DRV_PHYSICAL_MAX) {
 		dev_put(dev);
 		return NETSTANDBY_IFACE_TYPE_NSS;
 	} else if (dev->ieee80211_ptr) {
-#ifdef RM_QCA_PROP
 		dev_put(dev);
-		return NETSTANDBY_IFACE_TYPE_WIFI;
-#else
-		/* For open profile, wifi is not supported */
-		return NETSTANDBY_IFACE_TYPE_UNSUPPORTED;
+#ifdef RM_QCA_PROP
+		if (port_id < 0)
+			return NETSTANDBY_IFACE_TYPE_MAX;
 #endif
+		return NETSTANDBY_IFACE_TYPE_WIFI;
+	} else if (port_id < 0) {
+		dev_put(dev);
+		return NETSTANDBY_IFACE_TYPE_MAX;
 	}
 
 	dev_put(dev);
@@ -401,13 +399,13 @@ enum netstandby_nl_ret netstandby_enter_msg_send(struct netstandby_nl_msg *nl_ms
 				info->enter_info.iface_cnt++;
 				break;
 
-#ifdef RM_QCA_PROP
 			case NETSTANDBY_IFACE_TYPE_WIFI:
+#ifdef RM_QCA_PROP
 				info = &gbl_ctx->info[NETSTANDBY_SUBSYSTEM_TYPE_WIFI];
 				info->enter_info.dev[i] = return_dev;
 				info->enter_info.iface_cnt++;
-				break;
 #endif
+				break;
 			case NETSTANDBY_IFACE_TYPE_PLATFORM:
 				break;
 

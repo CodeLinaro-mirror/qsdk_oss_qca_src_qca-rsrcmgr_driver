@@ -74,9 +74,7 @@ enum netstandby_sytem_state {
  */
 enum netstandby_iface_type {
 	NETSTANDBY_IFACE_TYPE_NSS = 0,
-#ifdef RM_QCA_PROP
 	NETSTANDBY_IFACE_TYPE_WIFI = 1,
-#endif
 	NETSTANDBY_IFACE_TYPE_PLATFORM = 2,
 	NETSTANDBY_IFACE_TYPE_UNSUPPORTED = 3,
 	NETSTANDBY_IFACE_TYPE_MAX,
