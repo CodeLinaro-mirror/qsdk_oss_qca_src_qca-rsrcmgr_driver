@@ -26,9 +26,22 @@
 
 #include <net/genetlink.h>
 #include <net/sock.h>
+#ifdef RM_QCA_PROP
+#include "netstandby_telemetry.h"
+#endif
 #include <netstandby_nl_if.h>
 #include "netstandby_main.h"
 #include "netstandby_nl_cmn.h"
+
+#ifdef RM_QCA_PROP
+/*
+ * netstandby_update_telemetry_nb
+ * 	Notifier for handling the neigh add/delete events for telemetry stats
+ */
+static struct notifier_block netstandby_update_telemetry_nb = {
+	.notifier_call = netstandby_telemetry_neigh_netevent_callback,
+};
+#endif
 
 /*
  * netstandby_module_init()
@@ -39,6 +52,11 @@ static int __init netstandby_module_init(void)
 	struct netstandby_gbl_ctx *gbl_ctx = &gbl_netstandby_ctx;
 	netstandby_nl_cmn_init();
 	INIT_DELAYED_WORK(&gbl_ctx->trigger_work, netstandby_trigger_work);
+#ifdef RM_QCA_PROP
+	INIT_DELAYED_WORK(&gbl_ctx->nss_sample.sampling_work, netstandby_nss_sampling_work_cb);
+	INIT_DELAYED_WORK(&gbl_ctx->lan_telemetry_work, netstandby_lan_telemetry_cb);
+	neigh_mac_update_register_notify(&netstandby_update_telemetry_nb);
+#endif
 	gbl_ctx->iface_configured = false;
 
 	return 0;
@@ -51,6 +69,9 @@ static int __init netstandby_module_init(void)
 static void __exit netstandby_module_exit(void)
 {
 	netstandby_nl_cmn_exit();
+#ifdef RM_QCA_PROP
+	neigh_mac_update_register_notify(&netstandby_update_telemetry_nb);
+#endif
 }
 
 module_init(netstandby_module_init);
