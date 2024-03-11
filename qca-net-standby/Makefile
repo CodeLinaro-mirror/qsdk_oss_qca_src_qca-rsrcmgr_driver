@@ -8,6 +8,4 @@ endif
 ccflags-y += -Wall -Werror
 ccflags-y := -I$(obj)/include/
 ccflags-y += -DCONFIG_NETSTANDBY=1
-#TODO: Remove this by removing the macro from DP export
-ccflags-y += -DNSS_DP_NETSTANDBY
 ccflags-y += -DNETSTANDBY_DEBUG_LEVEL=3

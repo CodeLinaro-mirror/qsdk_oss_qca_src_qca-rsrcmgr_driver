@@ -280,8 +280,45 @@ void netstandby_exit_completion_event(void *app_data, struct netstandby_event_co
 
 #if defined(RM_QCA_PROP) && !defined(RM_QCA_256M_PROFILE)
 /*
+ * netstandby_dump_nss_telemetry
+ * 	Dump the NSS telemetry
+ */
+void netstandby_dump_nss_telemetry(struct netstandby_erp_nss_telemetry *nss_telemetry)
+{
+	int i = 0;
+
+	if (!nss_telemetry) {
+		netstandby_warn(KERN_ERR "nss_telemetry is NULL\n");
+		return;
+	}
+
+	netstandby_info("Dumping the NSS telemetry in netstandby driver\n");
+	netstandby_info("Eth stats:\n");
+	netstandby_info("Num of ifaces:%d\n", nss_telemetry->num_of_ifaces);
+	for(i = 0; i < nss_telemetry->num_of_ifaces; i++) {
+		netstandby_info("Dev:%s Tx bytes %llu Rx bytes %llu Tx pkts %llu Rx pkts %llu\n",
+				nss_telemetry->ethstats[i].dev_name, nss_telemetry->ethstats[i].tx_bytes_diff,
+				nss_telemetry->ethstats[i].rx_bytes_diff, nss_telemetry->ethstats[i].tx_pkts_diff,
+				nss_telemetry->ethstats[i].rx_pkts_diff);
+	}
+
+	netstandby_info("CPU util stats:\n");
+	for(i = 0; i < NR_CPUS; i++) {
+		netstandby_info("CPU:%d non idle %llu compute %llu\n", i,
+				nss_telemetry->cpuutil_telemetry[i].non_idle_time,
+				nss_telemetry->cpuutil_telemetry[i].compute_period);
+	}
+
+	netstandby_info("New link up curr up dev %d prev up dev %d\n", nss_telemetry->eth_link_up.curr_link_up,
+			nss_telemetry->eth_link_up.prev_link_up);
+
+	netstandby_info("Curr imp ct %d Prev imp ct %d nf ct %llu\n", nss_telemetry->ct_data_flows.prev_ct_data_flow_cnt,
+                        nss_telemetry->ct_data_flows.curr_ct_data_flow_cnt, nss_telemetry->num_of_nf_ct);
+}
+
+/*
  * netstandby_nss_telemetry_to_rm
- * 	Send the NSS algo params to RM
+ * 	Send the NSS telemetry to RM
  */
 bool netstandby_nss_telemetry_to_rm(struct netstandby_erp_nss_telemetry *nss_telemetry)
 {
@@ -319,6 +356,7 @@ bool netstandby_nss_telemetry_to_rm(struct netstandby_erp_nss_telemetry *nss_tel
 	memcpy(&ns_msg_info->ns_msg.nss_telemetry, nss_telemetry, sizeof(struct netstandby_erp_nss_telemetry));
 	memcpy(new_addr, ns_msg_info, sizeof(struct netstandby_nl_msg_info));
 
+	netstandby_dump_nss_telemetry(nss_telemetry);
 	netstandby_info("Sending NSS algo params to RM\n");
 	netstandby_nl_cmn_ucast_resp_internal(skb, info->nl_sock, info->pid);
 	kfree(ns_msg_info);
@@ -445,7 +483,6 @@ enum netstandby_nl_ret netstandby_init_msg_send(struct netstandby_nl_msg *nl_msg
 			memcpy(&gbl_ctx->wan_intf[i], &rule->msg.init.wan_intf[i], sizeof(gbl_ctx->wan_intf[i]));
 		}
 
-		nss_dp_get_eth_info(gbl_ctx->ethinfo, NSS_DP_MAX_INTERFACES - 1);
 		gbl_ctx->wan_iface_cnt = rule->msg.init.wan_iface_cnt;
 		netstandby_info("ERP service is enabled with sample timer as %d\n", rule->msg.init.nss_sampling_timer);
 	}
