@@ -29,7 +29,7 @@
  * We are reserving below netlink number to create a kernel netlink socket
  * These socket will be used for Kernel to APP and APP to APP communication
  */
-#define NETLINK_USER 28
+#define NETLINK_USER 30
 #define NETSTANDBY_NL_FAMILY "nl_netstandby"
 
 /**
