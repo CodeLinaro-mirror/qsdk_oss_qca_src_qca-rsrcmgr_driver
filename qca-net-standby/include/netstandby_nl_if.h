@@ -95,6 +95,10 @@ enum netstandby_nl_event_type {
 	NETSTANDBY_NL_KERNEL_EVENT,			/**< Event from Kernel to Userspace */
 	NETSTANDBY_NL_CLI_EVENT_STATUS_REQUEST,		/**< Request for system status */
 	NETSTANDBY_NL_CLI_EVENT_STATUS_RESPONSE,	/**< Response for the status request */
+#ifdef RM_QCA_PROP
+	NETSTANDBY_NL_NSS_TELEMETRY,	/**< NSS telemetry stats to ES */
+	NETSTANDBY_NL_LAN_TELEMETRY,	/**< LAN Telemetry stats to ES */
+#endif
 };
 
 /*
@@ -165,6 +169,10 @@ struct netstandby_nl_msg_info {
 		struct netstandby_rule rule;		/**< Rule structure to be used from CLI to daemon */
 		struct netstandby_nl_event_param param;	/**< Param structure to be passed from kernel to daemon */
 		struct netstandby_nl_system_info netstandby_status; /**< Status structure at daemon level */
+#ifdef RM_QCA_PROP
+		struct netstandby_erp_nss_telemetry nss_telemetry;	/**< Periodic NSS telemetry synced to user space */
+		struct netstandby_lan_telemetry lan_telemetry[NETSTANDBY_LAN_CLIENT_TELEMETRY_MAX];	/**< LAN telemetry synced to user space */
+#endif
 	} ns_msg;
 	pid_t resp_pid;	/** < PID of the process which started the call */
 };

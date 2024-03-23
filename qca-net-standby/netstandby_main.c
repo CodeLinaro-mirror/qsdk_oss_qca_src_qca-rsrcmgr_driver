@@ -49,6 +49,10 @@
 #include <stdint.h>
 #endif
 
+#ifdef RM_QCA_PROP
+#include "netstandby_telemetry.h"
+#endif
+
 #include <netstandby_nl_if.h>
 #include "netstandby_nss.h"
 #include "netstandby_nl.h"
@@ -119,6 +123,7 @@ void netstandby_send_completion_response(enum netstandby_notif_type ev_type, enu
 	msg_size = sizeof(struct netstandby_nl_msg_info);
 	skb = nlmsg_new(msg_size, GFP_KERNEL);
 	if (!skb) {
+		kfree(ns_msg_info);
 		netstandby_warn(KERN_ERR "Failed to allocate skb\n");
 		return;
 	}
@@ -165,6 +170,7 @@ void netstandby_trigger_completion_event(void *app_data, struct netstandby_trigg
 	msg_size = sizeof(struct netstandby_nl_msg_info);
 	skb = nlmsg_new(msg_size, GFP_KERNEL);
 	if (!skb) {
+		kfree(ns_msg_info);
 		netstandby_warn(KERN_ERR "Failed to allocate skb\n");
 		return;
 	}
@@ -177,6 +183,7 @@ void netstandby_trigger_completion_event(void *app_data, struct netstandby_trigg
 	ns_msg_info->ns_msg.param.system_type = type;
 	memcpy(new_addr, ns_msg_info, sizeof(struct netstandby_nl_msg_info));
 
+	netstandby_info("Sending Trigger completion to RM\n");
 	netstandby_nl_cmn_ucast_resp_internal(skb, info->nl_sock, info->pid);
 	kfree(ns_msg_info);
 }
@@ -205,6 +212,7 @@ void netstandby_enter_completion_event(void *app_data, struct netstandby_event_c
 	msg_size = sizeof(struct netstandby_nl_msg_info);
 	skb = nlmsg_new(msg_size, GFP_KERNEL);
 	if (!skb) {
+		kfree(ns_msg_info);
 		netstandby_warn(KERN_ERR "Failed to allocate skb\n");
 		return;
 	}
@@ -252,6 +260,7 @@ void netstandby_exit_completion_event(void *app_data, struct netstandby_event_co
 	msg_size = sizeof(struct netstandby_nl_msg_info);
 	skb = nlmsg_new(msg_size, GFP_KERNEL);
 	if (!skb) {
+		kfree(ns_msg_info);
 		netstandby_warn(KERN_ERR "Failed to allocate skb\n");
 		return;
 	}
@@ -272,6 +281,101 @@ void netstandby_exit_completion_event(void *app_data, struct netstandby_event_co
 	kfree(ns_msg_info);
 }
 
+#ifdef RM_QCA_PROP
+/*
+ * netstandby_nss_telemetry_to_rm
+ * 	Send the NSS algo params to RM
+ */
+bool netstandby_nss_telemetry_to_rm(struct netstandby_erp_nss_telemetry *nss_telemetry)
+{
+	struct netstandby_gbl_ctx *gbl_ctx = &gbl_netstandby_ctx;
+	struct netstandby_system_info *info = &gbl_ctx->info[NETSTANDBY_SUBSYSTEM_TYPE_NSS];
+	struct netstandby_nl_msg_info *ns_msg_info;
+	struct sk_buff *skb;
+	struct nlmsghdr *nlh;
+	int msg_size;
+	unsigned char *new_addr;
+
+	if (!info->nl_sock) {
+		netstandby_warn(KERN_ERR "Sock is NULL\n");
+		return false;
+	}
+
+	ns_msg_info = kzalloc(sizeof(struct netstandby_nl_msg_info), GFP_ATOMIC);
+	if (!ns_msg_info) {
+		netstandby_warn(KERN_ERR "Failed to allocate ns_msg_info\n");
+		return false;
+	}
+
+	msg_size = sizeof(struct netstandby_nl_msg_info);
+	skb = nlmsg_new(msg_size, GFP_ATOMIC);
+	if (!skb) {
+		kfree(ns_msg_info);
+		netstandby_warn(KERN_ERR "Failed to allocate skb\n");
+		return false;
+	}
+
+	nlh = nlmsg_put(skb, 0, 0, NLMSG_DONE, msg_size, 0);
+
+	new_addr = (unsigned char *)nlmsg_data(nlh);
+	ns_msg_info->event_type = NETSTANDBY_NL_NSS_TELEMETRY;
+	memcpy(&ns_msg_info->ns_msg.nss_telemetry, nss_telemetry, sizeof(struct netstandby_erp_nss_telemetry));
+	memcpy(new_addr, ns_msg_info, sizeof(struct netstandby_nl_msg_info));
+
+	netstandby_info("Sending NSS algo params to RM\n");
+	netstandby_nl_cmn_ucast_resp_internal(skb, info->nl_sock, info->pid);
+	kfree(ns_msg_info);
+	return true;
+}
+
+/*
+ * netstandby_lan_telemetry_status_to_rm
+ * 	Update telemetry stats to RM
+ */
+bool netstandby_lan_telemetry_stats_to_rm(struct netstandby_lan_telemetry lan_telemetry[])
+{
+	struct netstandby_gbl_ctx *gbl_ctx = &gbl_netstandby_ctx;
+	struct netstandby_system_info *info = &gbl_ctx->info[NETSTANDBY_SUBSYSTEM_TYPE_NSS];
+	struct netstandby_nl_msg_info *ns_msg_info;
+	struct sk_buff *skb;
+	struct nlmsghdr *nlh;
+	int msg_size;
+	unsigned char *new_addr;
+
+	if (!info->nl_sock) {
+		netstandby_warn(KERN_ERR "Sock is NULL\n");
+		return false;
+	}
+
+	ns_msg_info = kzalloc(sizeof(struct netstandby_nl_msg_info), GFP_ATOMIC);
+	if (!ns_msg_info) {
+		netstandby_warn(KERN_ERR "Failed to allocate ns_msg_info\n");
+		return false;
+	}
+
+	msg_size = sizeof(struct netstandby_nl_msg_info);
+	skb = nlmsg_new(msg_size, GFP_ATOMIC);
+	if (!skb) {
+		kfree(ns_msg_info);
+		netstandby_warn(KERN_ERR "Failed to allocate skb\n");
+		return false;
+	}
+
+	nlh = nlmsg_put(skb, 0, 0, NLMSG_DONE, msg_size, 0);
+
+	new_addr = (unsigned char *)nlmsg_data(nlh);
+	ns_msg_info->event_type = NETSTANDBY_NL_LAN_TELEMETRY;
+	memcpy(&ns_msg_info->ns_msg.lan_telemetry, lan_telemetry,
+	       (NETSTANDBY_LAN_CLIENT_TELEMETRY_MAX * sizeof(struct netstandby_lan_telemetry)));
+	memcpy(new_addr, ns_msg_info, sizeof(struct netstandby_nl_msg_info));
+
+	netstandby_info("Sending Telemetry stats to RM\n");
+	netstandby_nl_cmn_ucast_resp_internal(skb, info->nl_sock, info->pid);
+	kfree(ns_msg_info);
+	return true;
+}
+#endif /* RM_QCA_PROP */
+
 /*
  * netstandby_deinit_msg_send()
  */
@@ -286,6 +390,12 @@ enum netstandby_nl_ret netstandby_deinit_msg_send(struct netstandby_nl_msg *nl_m
 		netstandby_warn(KERN_ERR "Sock is not present\n");
 		return NETSTANDBY_NL_RET_FAIL;
 	}
+
+#ifdef RM_QCA_PROP
+	if (gbl_ctx->nss_sample.sampling_time_millisec) {
+		cancel_delayed_work_sync(&gbl_ctx->nss_sample.sampling_work);
+	}
+#endif
 
 	netlink_kernel_release(info->nl_sock);
 	info->nl_sock = NULL;
@@ -367,6 +477,22 @@ enum netstandby_nl_ret netstandby_init_msg_send(struct netstandby_nl_msg *nl_msg
 			}
 		}
 	}
+
+#ifdef RM_QCA_PROP
+	if (rule->msg.init.nss_sampling_timer)  {
+		gbl_ctx->nss_sample.sampling_time_millisec = (SECS_TO_MILLI_SECS * rule->msg.init.nss_sampling_timer);
+		schedule_delayed_work(&gbl_ctx->nss_sample.sampling_work,
+				      msecs_to_jiffies(gbl_ctx->nss_sample.sampling_time_millisec));
+
+		for(i = 0; i < rule->msg.init.wan_iface_cnt; i++) {
+			memcpy(&gbl_ctx->wan_intf[i], &rule->msg.init.wan_intf[i], sizeof(gbl_ctx->wan_intf[i]));
+		}
+
+		nss_dp_get_eth_info(gbl_ctx->ethinfo, NSS_DP_MAX_INTERFACES - 1);
+		gbl_ctx->wan_iface_cnt = rule->msg.init.wan_iface_cnt;
+		netstandby_info("ERP service is enabled with sample timer as %d\n", rule->msg.init.nss_sampling_timer);
+	}
+#endif
 
 	nl_msg->ret = NETSTANDBY_NL_RET_SUCCESS;
 	return NETSTANDBY_NL_RET_SUCCESS;

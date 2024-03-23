@@ -41,6 +41,7 @@ void netstandby_trigger_work(struct work_struct *work)
 
 	trigger_info.system_type = NETSTANDBY_SUBSYSTEM_TYPE_NSS;
 	trigger_info.event_type = NETSTANDBY_NOTIF_TRIGGER;
+
 	info->init_info.trigger_cb(NULL, &trigger_info);
 }
 
@@ -59,6 +60,8 @@ bool netstandby_acl_process_buf(void *app_data, void *skb)
 	skb_local->protocol = eth_type_trans(skb_local, skb_local->dev);
 	skb_local->pkt_type = PACKET_HOST;
 	netif_receive_skb(skb_local);
+
+	netstandby_info("Processing the trigger packet in netstandby driver\n");
 
 	/*
 	 * To avoid burst of netlink message in the NL socket,

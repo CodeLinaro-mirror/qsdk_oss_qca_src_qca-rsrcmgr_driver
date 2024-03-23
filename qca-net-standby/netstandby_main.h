@@ -18,14 +18,17 @@
 #define __NETSTANDBY_MAIN_H
 
 #include <uapi/linux/netstandby.h>
+#ifdef RM_QCA_PROP
+#include <nss_dp_api_if.h>
+#endif
 
 #if defined(CONFIG_DYNAMIC_DEBUG)
 /*
  *  * If dynamic debug is enabled, use pr_debug.
  */
-#define netstandby_warn(s, ...) pr_debug("%s[%d]:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define netstandby_info(s, ...) pr_debug("%s[%d]:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define netstandby_trace(s, ...) pr_debug("%s[%d]:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define netstandby_warn(s, ...) pr_debug("[%d]:" s, __LINE__, ##__VA_ARGS__)
+#define netstandby_info(s, ...) pr_debug("[%d]:" s, __LINE__, ##__VA_ARGS__)
+#define netstandby_trace(s, ...) pr_debug("[%d]:" s, __LINE__, ##__VA_ARGS__)
 #else
 
 /*
@@ -34,26 +37,30 @@
 #if (NETSTANDBY_DEBUG_LEVEL < 2)
 #define netstandby_warn(s, ...)
 #else
-#define netstandby_warn(s, ...) pr_warn("%s[%d]:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define netstandby_warn(s, ...) pr_warn("[%d]:" s, __LINE__, ##__VA_ARGS__)
 #endif
 
 #if (NETSTANDBY_DEBUG_LEVEL < 3)
 #define netstandby_info(s, ...)
 #else
-#define netstandby_info(s, ...) pr_notice("%s[%d]:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define netstandby_info(s, ...) pr_notice("[%d]:" s, __LINE__, ##__VA_ARGS__)
 #endif
 
 #if (NETSTANDBY_DEBUG_LEVEL < 4)
 #define netstandby_trace(s, ...)
 #else
-#define netstandby_trace(s, ...) pr_info("%s[%d]:" s, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define netstandby_trace(s, ...) pr_info("[%d]:" s, __LINE__, ##__VA_ARGS__)
 #endif
 #endif
 
 /*
  * debug message for module init and exit
  */
-#define netstandby_info_always(s, ...) printk(KERN_INFO"%s[%d]:" s, __func__, __LINE__, ##__VA_ARGS__)
+#define netstandby_info_always(s, ...) printk(KERN_INFO"[%d]:" s, __LINE__, ##__VA_ARGS__)
+
+#ifdef RM_QCA_PROP
+#define SECS_TO_MILLI_SECS 1000
+#endif
 
 extern struct netstandby_gbl_ctx gbl_netstandby_ctx;
 
@@ -105,6 +112,45 @@ struct netstandby_system_info {
 	netstandby_ptr_t sock_data;
 };
 
+#ifdef RM_QCA_PROP
+/*
+ * netstandby_erp_eth_sample
+ * 	Struct for maintaining Ethenert iface stats
+ */
+struct netstandby_erp_eth_sample {
+	uint64_t cur_tx_bytes;	/** < Holds the curr Tx bytes of eth iface from dev stats */
+	uint64_t cur_rx_bytes;	/** < Holds the curr Rx bytes of eth iface from dev stats */
+	uint64_t prev_tx_bytes;	/** < Holds the prev Tx bytes of eth iface from dev stats */
+	uint64_t prev_rx_bytes;	/** <Holds the prev Rx bytes of eth iface from dev stats */
+	uint64_t cur_tx_packets;	/** < Holds the curr Tx pkts of eth iface from dev stats */
+	uint64_t cur_rx_packets;	/** < Holds the curr Rx pkts of eth iface from dev stats */
+	uint64_t prev_tx_packets;	/** < Holds the prev Tx pkts of eth iface from dev stats */
+	uint64_t prev_rx_packets;	/** < Holds the prev Rx pkts of eth iface from dev stats */
+};
+
+/*
+ * netstandby_erp_cpuutil_sample
+ * 	Struct for maintaining CPU utilization stats
+ */
+struct netstandby_erp_cpuutil_sample {
+	uint64_t current_idle_sec;	/** < Holds the curr idle sec of the each CPU */
+	uint64_t previous_idle_sec;	/** < Holds the prev idle sec of the each CPU */
+	uint64_t curr_time;	/** < Holds the curr time */
+	uint64_t prev_time;	/** < Holds the prev time */
+};
+
+/*
+ * netstandby_nss_erp_sample
+ * 	Struct for maintaining NSS telemetry stats
+ */
+struct netstandby_nss_erp_sample {
+	struct delayed_work sampling_work;	/** < Delayed work for collecting the NSS algo params */
+	uint32_t sampling_time_millisec;	/** < NSS sampling time value in millsec */
+	struct netstandby_erp_eth_sample curr_eth_sample[NSS_DP_MAX_INTERFACES-1];	/** < Holds the stats of all eth ifaces */
+	struct netstandby_erp_cpuutil_sample curr_cpuutil_sample[NR_CPUS];	/** < Holds the non idle of each CPU in the sample time */
+};
+#endif
+
 /*
  * netstandby_gbl_ctx
  *	Global context
@@ -118,13 +164,29 @@ struct netstandby_gbl_ctx {
 	bool iface_configured;
 	bool cli_based_wakeup;
 	bool is_acl_default;
+#ifdef RM_QCA_PROP
+	struct netstandby_nss_erp_sample nss_sample;	/** < Maintains the NSS sampling config & NSS algo params */
+	struct netstandby_lan_telemetry lan_telemetry[NETSTANDBY_LAN_CLIENT_TELEMETRY_MAX];	/** < Holds the LAN telemetry stats */
+	struct nss_dp_eth_netdev_info ethinfo[NSS_DP_MAX_INTERFACES-1];	/** < Holds the devlist of NSS */
+	struct delayed_work lan_telemetry_work;	/** < Delayed work for updating the client telemetry stats */
+	char wan_intf[NETSTANDBY_MAX_ETH_PORTS][NETSTANDBY_MSG_IFNAME_MAX];	/** < WAN iface */
+	int wan_iface_cnt;	/** < Number of WAN ifaces */
+#endif
 };
 
 void netstandby_trigger_work(struct work_struct *work);
+#ifdef RM_QCA_PROP
+void netstandby_nss_sampling_work_cb(struct work_struct *work);
+void netstandby_lan_telemetry_cb(struct work_struct *work);
+#endif
 
 /* Message send API(s) invoked by netlink layer */
 enum netstandby_nl_ret netstandby_init_msg_send(struct netstandby_nl_msg *nl_msg);
 enum netstandby_nl_ret netstandby_enter_msg_send(struct netstandby_nl_msg *nl_msg);
 enum netstandby_nl_ret netstandby_exit_msg_send(struct netstandby_nl_msg *nl_msg);
 enum netstandby_nl_ret netstandby_deinit_msg_send(struct netstandby_nl_msg *nl_msg);
+#ifdef RM_QCA_PROP
+bool netstandby_nss_telemetry_to_rm(struct netstandby_erp_nss_telemetry *nss_telemetry);
+bool netstandby_lan_telemetry_stats_to_rm(struct netstandby_lan_telemetry lan_telemetry[]);
+#endif
 #endif
