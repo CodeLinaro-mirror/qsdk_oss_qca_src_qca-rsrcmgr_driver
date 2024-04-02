@@ -278,7 +278,7 @@ void netstandby_exit_completion_event(void *app_data, struct netstandby_event_co
 	kfree(ns_msg_info);
 }
 
-#ifdef RM_QCA_PROP
+#if defined(RM_QCA_PROP) && !defined(RM_QCA_256M_PROFILE)
 /*
  * netstandby_nss_telemetry_to_rm
  * 	Send the NSS algo params to RM
@@ -324,7 +324,14 @@ bool netstandby_nss_telemetry_to_rm(struct netstandby_erp_nss_telemetry *nss_tel
 	kfree(ns_msg_info);
 	return true;
 }
-#endif /* RM_QCA_PROP */
+
+#else
+bool netstandby_nss_telemetry_to_rm(struct netstandby_erp_nss_telemetry *nss_telemetry)
+{
+	return false;
+}
+
+#endif /* RM_QCA_PROP && !RM_QCA_256M_PROFILE */
 
 /*
  * netstandby_deinit_msg_send()

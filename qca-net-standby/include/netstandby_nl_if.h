@@ -95,7 +95,7 @@ enum netstandby_nl_event_type {
 	NETSTANDBY_NL_KERNEL_EVENT,			/**< Event from Kernel to Userspace */
 	NETSTANDBY_NL_CLI_EVENT_STATUS_REQUEST,		/**< Request for system status */
 	NETSTANDBY_NL_CLI_EVENT_STATUS_RESPONSE,	/**< Response for the status request */
-#ifdef RM_QCA_PROP
+#if defined(RM_QCA_PROP) && !defined(RM_QCA_256M_PROFILE)
 	NETSTANDBY_NL_NSS_TELEMETRY,	/**< NSS telemetry stats to ES */
 #endif
 };
