@@ -3,7 +3,7 @@
 obj-m += qca-net-standby.o
 qca-net-standby-objs := netstandby_main.o netstandby_nl.o netstandby_nl_cmn.o netstandby_nss.o netstandby_init.o
 ifeq ($(erp_phase_2),y)
-qca-net-standby-objs += netstandby_algo.o netstandby_telemetry.o
+qca-net-standby-objs += netstandby_algo.o
 endif
 ccflags-y += -Wall -Werror
 ccflags-y := -I$(obj)/include/

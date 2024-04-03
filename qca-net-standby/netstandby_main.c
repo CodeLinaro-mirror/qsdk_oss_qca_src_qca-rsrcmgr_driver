@@ -49,9 +49,6 @@
 #include <stdint.h>
 #endif
 
-#ifdef RM_QCA_PROP
-#include "netstandby_telemetry.h"
-#endif
 
 #include <netstandby_nl_if.h>
 #include "netstandby_nss.h"
@@ -323,53 +320,6 @@ bool netstandby_nss_telemetry_to_rm(struct netstandby_erp_nss_telemetry *nss_tel
 	memcpy(new_addr, ns_msg_info, sizeof(struct netstandby_nl_msg_info));
 
 	netstandby_info("Sending NSS algo params to RM\n");
-	netstandby_nl_cmn_ucast_resp_internal(skb, info->nl_sock, info->pid);
-	kfree(ns_msg_info);
-	return true;
-}
-
-/*
- * netstandby_lan_telemetry_status_to_rm
- * 	Update telemetry stats to RM
- */
-bool netstandby_lan_telemetry_stats_to_rm(struct netstandby_lan_telemetry lan_telemetry[])
-{
-	struct netstandby_gbl_ctx *gbl_ctx = &gbl_netstandby_ctx;
-	struct netstandby_system_info *info = &gbl_ctx->info[NETSTANDBY_SUBSYSTEM_TYPE_NSS];
-	struct netstandby_nl_msg_info *ns_msg_info;
-	struct sk_buff *skb;
-	struct nlmsghdr *nlh;
-	int msg_size;
-	unsigned char *new_addr;
-
-	if (!info->nl_sock) {
-		netstandby_warn(KERN_ERR "Sock is NULL\n");
-		return false;
-	}
-
-	ns_msg_info = kzalloc(sizeof(struct netstandby_nl_msg_info), GFP_ATOMIC);
-	if (!ns_msg_info) {
-		netstandby_warn(KERN_ERR "Failed to allocate ns_msg_info\n");
-		return false;
-	}
-
-	msg_size = sizeof(struct netstandby_nl_msg_info);
-	skb = nlmsg_new(msg_size, GFP_ATOMIC);
-	if (!skb) {
-		kfree(ns_msg_info);
-		netstandby_warn(KERN_ERR "Failed to allocate skb\n");
-		return false;
-	}
-
-	nlh = nlmsg_put(skb, 0, 0, NLMSG_DONE, msg_size, 0);
-
-	new_addr = (unsigned char *)nlmsg_data(nlh);
-	ns_msg_info->event_type = NETSTANDBY_NL_LAN_TELEMETRY;
-	memcpy(&ns_msg_info->ns_msg.lan_telemetry, lan_telemetry,
-	       (NETSTANDBY_LAN_CLIENT_TELEMETRY_MAX * sizeof(struct netstandby_lan_telemetry)));
-	memcpy(new_addr, ns_msg_info, sizeof(struct netstandby_nl_msg_info));
-
-	netstandby_info("Sending Telemetry stats to RM\n");
 	netstandby_nl_cmn_ucast_resp_internal(skb, info->nl_sock, info->pid);
 	kfree(ns_msg_info);
 	return true;

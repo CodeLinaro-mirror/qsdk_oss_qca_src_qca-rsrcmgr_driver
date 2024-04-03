@@ -97,7 +97,6 @@ enum netstandby_nl_event_type {
 	NETSTANDBY_NL_CLI_EVENT_STATUS_RESPONSE,	/**< Response for the status request */
 #ifdef RM_QCA_PROP
 	NETSTANDBY_NL_NSS_TELEMETRY,	/**< NSS telemetry stats to ES */
-	NETSTANDBY_NL_LAN_TELEMETRY,	/**< LAN Telemetry stats to ES */
 #endif
 };
 

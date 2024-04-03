@@ -12,9 +12,10 @@
 #include <linux/netstandby.h>
 #include <linux/module.h>
 #include <linux/timer.h>
+#include <net/genetlink.h>
+#include <net/sock.h>
 #include <netstandby_nl_if.h>
 #include <netstandby_msg_if.h>
-#include "netstandby_telemetry.h"
 #include "netstandby_main.h"
 #include "netstandby_nl_cmn.h"
 #include <net/netfilter/nf_conntrack.h>

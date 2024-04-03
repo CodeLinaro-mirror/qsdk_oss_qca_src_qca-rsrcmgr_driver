@@ -166,9 +166,7 @@ struct netstandby_gbl_ctx {
 	bool is_acl_default;
 #ifdef RM_QCA_PROP
 	struct netstandby_nss_erp_sample nss_sample;	/** < Maintains the NSS sampling config & NSS algo params */
-	struct netstandby_lan_telemetry lan_telemetry[NETSTANDBY_LAN_CLIENT_TELEMETRY_MAX];	/** < Holds the LAN telemetry stats */
 	struct nss_dp_eth_netdev_info ethinfo[NSS_DP_MAX_INTERFACES-1];	/** < Holds the devlist of NSS */
-	struct delayed_work lan_telemetry_work;	/** < Delayed work for updating the client telemetry stats */
 	char wan_intf[NETSTANDBY_MAX_ETH_PORTS][NETSTANDBY_MSG_IFNAME_MAX];	/** < WAN iface */
 	int wan_iface_cnt;	/** < Number of WAN ifaces */
 #endif
@@ -177,7 +175,6 @@ struct netstandby_gbl_ctx {
 void netstandby_trigger_work(struct work_struct *work);
 #ifdef RM_QCA_PROP
 void netstandby_nss_sampling_work_cb(struct work_struct *work);
-void netstandby_lan_telemetry_cb(struct work_struct *work);
 #endif
 
 /* Message send API(s) invoked by netlink layer */
@@ -187,6 +184,5 @@ enum netstandby_nl_ret netstandby_exit_msg_send(struct netstandby_nl_msg *nl_msg
 enum netstandby_nl_ret netstandby_deinit_msg_send(struct netstandby_nl_msg *nl_msg);
 #ifdef RM_QCA_PROP
 bool netstandby_nss_telemetry_to_rm(struct netstandby_erp_nss_telemetry *nss_telemetry);
-bool netstandby_lan_telemetry_stats_to_rm(struct netstandby_lan_telemetry lan_telemetry[]);
 #endif
 #endif
