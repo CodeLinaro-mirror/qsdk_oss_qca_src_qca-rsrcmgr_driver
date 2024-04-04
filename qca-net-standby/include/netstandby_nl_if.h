@@ -82,7 +82,7 @@ struct netstandby_nl_cmn {
  * netstandby_nl_event_param()
  */
 struct netstandby_nl_event_param {
-	enum netstandby_notif_type event_type;		/**< Notification type */
+	enum netstandby_notif_type notif_type;		/**< Notification type */
 	enum netstandby_subsystem_type system_type;	/**< Subsystem type */
 };
 
@@ -98,6 +98,7 @@ enum netstandby_nl_event_type {
 #if defined(RM_QCA_PROP) && !defined(RM_QCA_256M_PROFILE)
 	NETSTANDBY_NL_NSS_TELEMETRY,	/**< NSS telemetry stats to ES */
 #endif
+	NETSTANDBY_NL_EVENT_MAX,
 };
 
 /*
