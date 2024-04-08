@@ -176,7 +176,7 @@ enum netstandby_status netstandby_acl_rule_create(struct netstandby_trigger_rule
 			}
 
 			if ((trigger_rule->valid_flags & NETSTANDBY_EXIT_TRIGGER_RULE_DES_IP_VALID) == NETSTANDBY_EXIT_TRIGGER_RULE_DES_IP_VALID) {
-				memcpy(&rule.rules[PPE_ACL_RULE_MATCH_TYPE_SIP].rule.dip.ip, trigger_rule->dest_ip, sizeof(trigger_rule->dest_ip));
+				memcpy(&rule.rules[PPE_ACL_RULE_MATCH_TYPE_DIP].rule.dip.ip, trigger_rule->dest_ip, sizeof(trigger_rule->dest_ip));
 				rule.rules[PPE_ACL_RULE_MATCH_TYPE_DIP].rule.dip.ip_type = PPE_ACL_IP_TYPE_V6;
 				rule.valid_flags |= PPE_ACL_RULE_MATCH_TYPE_DIP_VALID;
 			}
