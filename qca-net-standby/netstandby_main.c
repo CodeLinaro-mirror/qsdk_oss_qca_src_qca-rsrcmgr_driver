@@ -129,7 +129,7 @@ void netstandby_send_completion_response(enum netstandby_notif_type ev_type, enu
 	new_addr = (unsigned char *)nlmsg_data(nlh);
 
 	ns_msg_info->event_type = NETSTANDBY_NL_KERNEL_EVENT;
-	ns_msg_info->ns_msg.param.event_type = ev_type;
+	ns_msg_info->ns_msg.param.notif_type = ev_type;
 	ns_msg_info->ns_msg.param.system_type = type;
 	memcpy(new_addr, ns_msg_info, sizeof(struct netstandby_nl_msg_info));
 
@@ -176,7 +176,7 @@ void netstandby_trigger_completion_event(void *app_data, struct netstandby_trigg
 
 	new_addr = (unsigned char *)nlmsg_data(nlh);
 	ns_msg_info->event_type = NETSTANDBY_NL_KERNEL_EVENT;
-	ns_msg_info->ns_msg.param.event_type = NETSTANDBY_NOTIF_TRIGGER;
+	ns_msg_info->ns_msg.param.notif_type = NETSTANDBY_NOTIF_TRIGGER;
 	ns_msg_info->ns_msg.param.system_type = type;
 	memcpy(new_addr, ns_msg_info, sizeof(struct netstandby_nl_msg_info));
 
@@ -217,7 +217,7 @@ void netstandby_enter_completion_event(void *app_data, struct netstandby_event_c
 	nlh = nlmsg_put(skb, 0, 0, NLMSG_DONE, msg_size, 0);
 	new_addr = (unsigned char *)nlmsg_data(nlh);
 	ns_msg_info->event_type = NETSTANDBY_NL_KERNEL_EVENT;
-	ns_msg_info->ns_msg.param.event_type = event_info->event_type;
+	ns_msg_info->ns_msg.param.notif_type = event_info->event_type;
 	ns_msg_info->ns_msg.param.system_type = type;
 	memcpy(new_addr, ns_msg_info, sizeof(struct netstandby_nl_msg_info));
 
@@ -267,7 +267,7 @@ void netstandby_exit_completion_event(void *app_data, struct netstandby_event_co
 	new_addr = (unsigned char *)nlmsg_data(nlh);
 
 	ns_msg_info->event_type = NETSTANDBY_NL_KERNEL_EVENT;
-	ns_msg_info->ns_msg.param.event_type = event_info->event_type;
+	ns_msg_info->ns_msg.param.notif_type = event_info->event_type;
 	ns_msg_info->ns_msg.param.system_type = type;
 	/*
 	 * Restore state to INIT since exit is done
