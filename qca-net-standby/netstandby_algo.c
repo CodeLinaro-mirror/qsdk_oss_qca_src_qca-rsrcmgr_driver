@@ -29,7 +29,9 @@
 #define NETSTANDBY_MCAST_IPV6_ALLNODES_ADDR	0x2000100	/* ff02:0000:0000:0000:0000:0000:0001:0002 */
 #define NETSTANDBY_MCAST_IPV6_NEIGHDIS_ADDR	0xfb000000	/* ff02:0000:0000:0000:0000:0000:0000:00fb */
 
-struct netstandby_erp_nss_telemetry eth_telemetry;
+int netstandby_nss_telemetry_retry = 0;
+struct netstandby_erp_nss_telemetry nss_telemetry;
+#define NETSTANDBY_MAX_NSS_TELEMETRY_RETRY	3
 
 /*
  * netstandby_get_idle_time
@@ -109,14 +111,16 @@ bool netstandby_is_flow_not_important(struct nf_conn *ct)
 		netstandby_info("IPV4 imp flow : src=%pI4, dst=%pI4, proto=%u status %ld l3 num %d sport %d dport %d\n",
 				&orig_tuple->src.u3.ip,
 				&orig_tuple->dst.u3.ip,
-				orig_tuple->dst.protonum, ct->status, orig_tuple->src.l3num, ntohs(orig_tuple->src.u.all), ntohs(orig_tuple->dst.u.all));
+				orig_tuple->dst.protonum, ct->status, orig_tuple->src.l3num,
+				ntohs(orig_tuple->src.u.all), ntohs(orig_tuple->dst.u.all));
 	}
 
 	if (ct->tuplehash[IP_CT_DIR_ORIGINAL].tuple.src.l3num == NFPROTO_IPV6) {
 		netstandby_info("IPV6 imp flow: src=%pI6, dst=%pI6, proto=%u status %ld l3 num %d sport %d dport %d\n",
 				orig_tuple->src.u3.ip6,
 				orig_tuple->dst.u3.ip6,
-				orig_tuple->dst.protonum, ct->status, orig_tuple->src.l3num, ntohs(orig_tuple->src.u.all), ntohs(orig_tuple->dst.u.all));
+				orig_tuple->dst.protonum, ct->status, orig_tuple->src.l3num,
+				ntohs(orig_tuple->src.u.all), ntohs(orig_tuple->dst.u.all));
 
 	}
 
@@ -133,12 +137,21 @@ void netstandby_nss_sampling_work_cb(struct work_struct *work)
 	struct net_device *dev;
 	uint8_t i = 0;
 	int bucket = 0;
+#if defined(IPQ5322_ERP)
+	int port_id = 0;
+#endif
 	struct nf_conn *ct;
 	struct nf_conntrack_tuple_hash *h;
 	struct hlist_nulls_node *n;
 	struct kernel_cpustat *kcs;
 	const struct rtnl_link_stats64 *dev_stats;
 	struct rtnl_link_stats64 temp;
+	struct netstandby_erp_cpu_usage *cpuutil_telemetry;
+	struct netstandby_erp_eth_sample *curr_eth_sample;
+	struct netstandby_erp_cpuutil_sample *curr_cpuutil_sample;
+	struct netstandby_erp_eth_stats *eth_telemetry;
+
+	nss_dp_get_eth_info(gbl_ctx->ethinfo, NSS_DP_MAX_INTERFACES - 1);
 
 	/*
 	 * Rate analysis
@@ -152,61 +165,100 @@ void netstandby_nss_sampling_work_cb(struct work_struct *work)
 		}
 
 		dev_stats = dev_get_stats(dev, &temp);
-		gbl_ctx->nss_sample.curr_eth_sample[i].cur_tx_bytes = dev_stats->tx_bytes;
-		gbl_ctx->nss_sample.curr_eth_sample[i].cur_rx_bytes = dev_stats->rx_bytes;
-		gbl_ctx->nss_sample.curr_eth_sample[i].cur_tx_packets = dev_stats->tx_packets;
-		gbl_ctx->nss_sample.curr_eth_sample[i].cur_rx_packets = dev_stats->rx_packets;
-		eth_telemetry.ethstats[i].tx_bytes_diff = gbl_ctx->nss_sample.curr_eth_sample[i].cur_tx_bytes - gbl_ctx->nss_sample.curr_eth_sample[i].prev_tx_bytes;
-		eth_telemetry.ethstats[i].rx_bytes_diff = gbl_ctx->nss_sample.curr_eth_sample[i].cur_rx_bytes - gbl_ctx->nss_sample.curr_eth_sample[i].prev_rx_bytes;
+		curr_eth_sample = &gbl_ctx->nss_sample.curr_eth_sample[i];
+		eth_telemetry = &nss_telemetry.ethstats[i];
 
-		eth_telemetry.ethstats[i].tx_pkts_diff = gbl_ctx->nss_sample.curr_eth_sample[i].cur_tx_packets - gbl_ctx->nss_sample.curr_eth_sample[i].prev_tx_packets;
-		eth_telemetry.ethstats[i].rx_pkts_diff = gbl_ctx->nss_sample.curr_eth_sample[i].cur_rx_packets - gbl_ctx->nss_sample.curr_eth_sample[i].prev_rx_packets;
-		gbl_ctx->nss_sample.curr_eth_sample[i].prev_tx_bytes = gbl_ctx->nss_sample.curr_eth_sample[i].cur_tx_bytes;
-		gbl_ctx->nss_sample.curr_eth_sample[i].prev_rx_bytes = gbl_ctx->nss_sample.curr_eth_sample[i].cur_rx_bytes;
-		gbl_ctx->nss_sample.curr_eth_sample[i].prev_tx_packets = gbl_ctx->nss_sample.curr_eth_sample[i].cur_tx_packets;
-		gbl_ctx->nss_sample.curr_eth_sample[i].prev_rx_packets = gbl_ctx->nss_sample.curr_eth_sample[i].cur_rx_packets;
-		memcpy(&eth_telemetry.ethstats[i].dev_name, dev->name, sizeof(eth_telemetry.ethstats[i].dev_name));
-		netstandby_info("Dev:%s Tx bytes %llu Rx bytes %llu Tx pkts %llu Rx pkts %llu\n", eth_telemetry.ethstats[i].dev_name, eth_telemetry.ethstats[i].tx_bytes_diff, eth_telemetry.ethstats[i].rx_bytes_diff, eth_telemetry.ethstats[i].tx_pkts_diff, eth_telemetry.ethstats[i].rx_pkts_diff);
+		curr_eth_sample->cur_tx_bytes = dev_stats->tx_bytes;
+		curr_eth_sample->cur_rx_bytes = dev_stats->rx_bytes;
+		curr_eth_sample->cur_tx_packets = dev_stats->tx_packets;
+		curr_eth_sample->cur_rx_packets = dev_stats->rx_packets;
+
+		eth_telemetry->tx_bytes_diff = curr_eth_sample->cur_tx_bytes - curr_eth_sample->prev_tx_bytes;
+		eth_telemetry->rx_bytes_diff = curr_eth_sample->cur_rx_bytes - curr_eth_sample->prev_rx_bytes;
+		eth_telemetry->tx_pkts_diff = curr_eth_sample->cur_tx_packets - curr_eth_sample->prev_tx_packets;
+		eth_telemetry->rx_pkts_diff = curr_eth_sample->cur_rx_packets - curr_eth_sample->prev_rx_packets;
+
+		curr_eth_sample->prev_tx_bytes = curr_eth_sample->cur_tx_bytes;
+		curr_eth_sample->prev_rx_bytes = curr_eth_sample->cur_rx_bytes;
+		curr_eth_sample->prev_tx_packets = curr_eth_sample->cur_tx_packets;
+		curr_eth_sample->prev_rx_packets = curr_eth_sample->cur_rx_packets;
+
+		memcpy(&nss_telemetry.ethstats[i].dev_name, dev->name, sizeof(nss_telemetry.ethstats[i].dev_name));
+		netstandby_info("Dev:%s Tx bytes %llu Rx bytes %llu Tx pkts %llu Rx pkts %llu\n",
+				nss_telemetry.ethstats[i].dev_name, nss_telemetry.ethstats[i].tx_bytes_diff,
+				nss_telemetry.ethstats[i].rx_bytes_diff, nss_telemetry.ethstats[i].tx_pkts_diff,
+				nss_telemetry.ethstats[i].rx_pkts_diff);
 	}
-	eth_telemetry.num_of_ifaces = i;
-	netstandby_info("Number of ifaces %d\n", eth_telemetry.num_of_ifaces);
+	nss_telemetry.num_of_ifaces = i;
+	netstandby_info("Number of ifaces %d\n", nss_telemetry.num_of_ifaces);
 
 	/*
 	 * CPU utilization analysis
 	 * 	Per CPU utilization logic
 	 */
-	for_each_possible_cpu(i) {
+	for(i = 0; i < NR_CPUS; i++) {
 		kcs = &kcpustat_cpu(i);
-		gbl_ctx->nss_sample.curr_cpuutil_sample[i].curr_time = ktime_get_real_ns();
-		gbl_ctx->nss_sample.curr_cpuutil_sample[i].current_idle_sec = netstandby_get_idle_time(kcs, i);
+		curr_cpuutil_sample = &gbl_ctx->nss_sample.curr_cpuutil_sample[i];
+		cpuutil_telemetry = &nss_telemetry.cpuutil_telemetry[i];
+
+		curr_cpuutil_sample->curr_time = ktime_get_real_ns();
+		curr_cpuutil_sample->current_idle_sec = netstandby_get_idle_time(kcs, i);
 
 		/*
-		 * Calculate the non idle time in the NSS sample timer value
+		 * Calculate the non idle time and period for which the non idle is computed
 		 */
-		eth_telemetry.cpuutil_telemetry[i].non_idle_time = (gbl_ctx->nss_sample.curr_cpuutil_sample[i].curr_time - gbl_ctx->nss_sample.curr_cpuutil_sample[i].prev_time) - (gbl_ctx->nss_sample.curr_cpuutil_sample[i].current_idle_sec - gbl_ctx->nss_sample.curr_cpuutil_sample[i].previous_idle_sec);
-		netstandby_info("CPU:%d prev time %llu cur time %llu prev idle %llu curr idle %llu non idle %llu\n", i, gbl_ctx->nss_sample.curr_cpuutil_sample[i].prev_time, gbl_ctx->nss_sample.curr_cpuutil_sample[i].curr_time, gbl_ctx->nss_sample.curr_cpuutil_sample[i].previous_idle_sec, gbl_ctx->nss_sample.curr_cpuutil_sample[i].current_idle_sec, eth_telemetry.cpuutil_telemetry[i].non_idle_time);
-		gbl_ctx->nss_sample.curr_cpuutil_sample[i].prev_time = gbl_ctx->nss_sample.curr_cpuutil_sample[i].curr_time;
-		gbl_ctx->nss_sample.curr_cpuutil_sample[i].previous_idle_sec = gbl_ctx->nss_sample.curr_cpuutil_sample[i].current_idle_sec;
+		cpuutil_telemetry->non_idle_time = (curr_cpuutil_sample->curr_time - curr_cpuutil_sample->prev_time) -
+			(curr_cpuutil_sample->current_idle_sec - curr_cpuutil_sample->previous_idle_sec);
+		cpuutil_telemetry->compute_period = (curr_cpuutil_sample->curr_time - curr_cpuutil_sample->prev_time);
+
+		netstandby_info("CPU:%d prev time %llu cur time %llu prev idle %llu "
+				"curr idle %llu non idle %llu compute %llu\n", i,
+				gbl_ctx->nss_sample.curr_cpuutil_sample[i].prev_time,
+				gbl_ctx->nss_sample.curr_cpuutil_sample[i].curr_time,
+				gbl_ctx->nss_sample.curr_cpuutil_sample[i].previous_idle_sec,
+				gbl_ctx->nss_sample.curr_cpuutil_sample[i].current_idle_sec,
+				nss_telemetry.cpuutil_telemetry[i].non_idle_time,
+				nss_telemetry.cpuutil_telemetry[i].compute_period);
+
+		curr_cpuutil_sample->prev_time = curr_cpuutil_sample->curr_time;
+		curr_cpuutil_sample->previous_idle_sec = curr_cpuutil_sample->current_idle_sec;
 	}
 
 	/*
 	 * Iface up analysis
 	 */
-	eth_telemetry.eth_link_up.prev_link_up = eth_telemetry.eth_link_up.curr_link_up;
-	eth_telemetry.eth_link_up.curr_link_up = 0;
+	nss_telemetry.eth_link_up.prev_link_up = nss_telemetry.eth_link_up.curr_link_up;
+	nss_telemetry.eth_link_up.curr_link_up = 0;
 
 	for (i = 0; i < NSS_DP_MAX_INTERFACES-1; i++) {
 		dev = (struct net_device *)gbl_ctx->ethinfo[i].netdev;
+
 		/*
 		 * Checks whether the iface is up or not
 		 */
 		if (netif_oper_up(dev)) {
-			eth_telemetry.eth_link_up.curr_link_up++;
+			netstandby_info("dev name %s switch connected %d\n", dev->name,
+					gbl_ctx->ethinfo[i].switch_connected);
+#if defined(IPQ5322_ERP)
+			if (gbl_ctx->ethinfo[i].switch_connected) {
+				for (port_id = 0; port_id < MAX_MHT_PORTS; port_id++) {
+					netstandby_info("PortID: %d status %d\n", port_id+1,
+							gbl_ctx->ethinfo[i].mht_port_status[port_id]);
+					if (gbl_ctx->ethinfo[i].mht_port_status[port_id]) {
+						nss_telemetry.eth_link_up.curr_link_up++;
+					}
+				}
+			} else {
+				nss_telemetry.eth_link_up.curr_link_up++;
+			}
+#else
+			nss_telemetry.eth_link_up.curr_link_up++;
+#endif
 		}
-
 	}
-	netstandby_info("New link up curr up dev %d prev up dev %d\n", eth_telemetry.eth_link_up.curr_link_up,
-			eth_telemetry.eth_link_up.prev_link_up);
+
+	netstandby_info("New link up curr up dev %d prev up dev %d\n", nss_telemetry.eth_link_up.curr_link_up,
+			nss_telemetry.eth_link_up.prev_link_up);
 
 	/*
 	 * Level#4 analysis
@@ -214,16 +266,18 @@ void netstandby_nss_sampling_work_cb(struct work_struct *work)
 	 * init_net.ct.count gives the total number of nf conntrack entries
 	 * If the number of conn track is more than max, then NSS is in non idle state
 	 */
-	eth_telemetry.num_of_nf_ct = atomic_read(&init_net.ct.count);
+	nss_telemetry.num_of_nf_ct = atomic_read(&init_net.ct.count);
 
-	eth_telemetry.ct_data_flows.prev_ct_data_flow_cnt = eth_telemetry.ct_data_flows.curr_ct_data_flow_cnt;
-	eth_telemetry.ct_data_flows.curr_ct_data_flow_cnt = 0;
+	nss_telemetry.ct_data_flows.prev_ct_data_flow_cnt = nss_telemetry.ct_data_flows.curr_ct_data_flow_cnt;
+	nss_telemetry.ct_data_flows.curr_ct_data_flow_cnt = 0;
 	for (bucket = 0; bucket < nf_conntrack_htable_size; bucket++) {
+
 		/*
 		 * Loop through each entry in the bucket
 		 */
 		hlist_nulls_for_each_entry(h, n, &nf_conntrack_hash[bucket],
 				hnnode) {
+
 			/*
 			 * Check the CT for IP_CT_DIR_ORIGINAL dir alone
 			 */
@@ -234,19 +288,25 @@ void netstandby_nss_sampling_work_cb(struct work_struct *work)
 			if (netstandby_is_flow_not_important(ct)) {
 				continue;
 			}
-			eth_telemetry.ct_data_flows.curr_ct_data_flow_cnt++;
+			nss_telemetry.ct_data_flows.curr_ct_data_flow_cnt++;
 		}
 	}
 
-	netstandby_info("Curr imp ct %d Prev imp ct %d nf ct %u\n", eth_telemetry.ct_data_flows.prev_ct_data_flow_cnt,
-			eth_telemetry.ct_data_flows.curr_ct_data_flow_cnt, atomic_read(&init_net.ct.count));
+	netstandby_info("Curr imp ct %d Prev imp ct %d nf ct %u\n", nss_telemetry.ct_data_flows.prev_ct_data_flow_cnt,
+			nss_telemetry.ct_data_flows.curr_ct_data_flow_cnt, atomic_read(&init_net.ct.count));
+
 	/*
-	 * Send the NSS telemetry to RM
+	 * Send the eth telemetry to RM
 	 */
-	if (netstandby_nss_telemetry_to_rm(&eth_telemetry)) {
+	if (!netstandby_nss_telemetry_to_rm(&nss_telemetry)) {
+		netstandby_nss_telemetry_retry++;
+	}
+
+	if (netstandby_nss_telemetry_retry < NETSTANDBY_MAX_NSS_TELEMETRY_RETRY) {
 		schedule_delayed_work(&gbl_ctx->nss_sample.sampling_work,
 				msecs_to_jiffies(gbl_ctx->nss_sample.sampling_time_millisec));
 	} else {
-		netstandby_warn("Telemetry to ERP service is failed\n");
+		netstandby_warn("Eth Telemetry to ERP service is failed for 3 times and so, samples will not sent"
+				"again to ERP un till standby is loaded again\n");
 	}
 }

@@ -37,15 +37,12 @@
 #ifndef __KERNEL__
 #define NR_CPUS 4
 #endif /* Kernel */
-/*
- * TODO: Name change to avoid Miami
- * Modify MIAMI_PORT_ERP to IPQ5322_ERP
- */
-#if defined(MIAMI_PORT_ERP)
+
+#if defined(IPQ5322_ERP)
 #define NETSTANDBY_MAX_ETH_PORTS	2	/* Miami board */
 #else
 #define NETSTANDBY_MAX_ETH_PORTS	6	/* Alder board */
-#endif
+#endif /* IPQ5322_ERP */
 #endif /* RM_QCA_PROP */
 
 /*
@@ -169,6 +166,7 @@ struct netstandby_erp_eth_stats {
  */
 struct netstandby_erp_cpu_usage {
 	uint64_t non_idle_time;	/** < Non idle time of CPU in nanosec during the NSS sampling period */
+	uint64_t compute_period;	/** < Period (in nanosec) for which the non-idle time of the CPU is computed */
 };
 
 /*
