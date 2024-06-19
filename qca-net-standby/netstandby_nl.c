@@ -116,6 +116,11 @@ static int netstandby_nl_ops_standby_stop_rule(struct sk_buff *skb, struct genl_
 	pid = nl_cm->pid;
 	netstandby_info("%s: pid: %d\n", __func__, pid);
 
+	if (netstandby_deinit_msg_send(nl_user_rule) != NETSTANDBY_NL_RET_SUCCESS) {
+		netstandby_warn("unable to send stop message\n");
+		return -EINVAL;
+	}
+
 	/*
 	 * copy the NL message for response
 	 * TODO:: return response in error cases
@@ -125,11 +130,6 @@ static int netstandby_nl_ops_standby_stop_rule(struct sk_buff *skb, struct genl_
 		netstandby_warn("%d:unable to save response data from NL buffer\n", pid);
 		error = -ENOMEM;
 		return error;
-	}
-
-	if (netstandby_deinit_msg_send(nl_user_rule) != NETSTANDBY_NL_RET_SUCCESS) {
-		netstandby_warn("unable to send stop message\n");
-		return -EINVAL;
 	}
 
 	ret = nl_user_rule->ret;
@@ -171,6 +171,11 @@ static int netstandby_nl_ops_init_rule(struct sk_buff *skb, struct genl_info *in
 	pid = nl_cm->pid;
 	netstandby_info("%s: pid: %d\n", __func__, pid);
 
+	if (netstandby_init_msg_send(nl_user_rule) != NETSTANDBY_NL_RET_SUCCESS) {
+		netstandby_info("unable to send init message\n");
+		return -EINVAL;
+	}
+
 	/*
 	 * copy the NL message for response
 	 * TODO:: return response in error cases
@@ -180,11 +185,6 @@ static int netstandby_nl_ops_init_rule(struct sk_buff *skb, struct genl_info *in
 		netstandby_warn("%d:unable to save response data from NL buffer\n", pid);
 		error = -ENOMEM;
 		return error;
-	}
-
-	if (netstandby_init_msg_send(nl_user_rule) != NETSTANDBY_NL_RET_SUCCESS) {
-		netstandby_info("unable to send init message\n");
-		return -EINVAL;
 	}
 
 	ret = nl_user_rule->ret;
@@ -223,6 +223,11 @@ static int netstandby_nl_ops_standby_enter_rule(struct sk_buff *skb, struct genl
 	pid = nl_cm->pid;
 	netstandby_info("%s: pid: %d\n", __func__, pid);
 
+	if (netstandby_enter_msg_send(nl_user_rule) != NETSTANDBY_NL_RET_SUCCESS) {
+		netstandby_info("unable to send enter message\n");
+		return -EINVAL;
+	}
+
 	/*
 	 * copy the NL message for response
 	 */
@@ -230,11 +235,6 @@ static int netstandby_nl_ops_standby_enter_rule(struct sk_buff *skb, struct genl
 	if (!resp) {
 		netstandby_warn("%d:unable to save response data from NL buffer\n", pid);
 		return -ENOMEM;
-	}
-
-	if (netstandby_enter_msg_send(nl_user_rule) != NETSTANDBY_NL_RET_SUCCESS) {
-		netstandby_info("unable to send enter message\n");
-		return -EINVAL;
 	}
 
 	ret = nl_user_rule->ret;
@@ -274,6 +274,11 @@ static int netstandby_nl_ops_standby_exit_rule(struct sk_buff *skb, struct genl_
 	pid = nl_cm->pid;
 	netstandby_info("%s: pid: %d\n", __func__, pid);
 
+	if (netstandby_exit_msg_send(nl_user_rule) != NETSTANDBY_NL_RET_SUCCESS) {
+		netstandby_info("unable to send exit message\n");
+		return -EINVAL;
+	}
+
 	/*
 	 * copy the NL message for response
 	 */
@@ -281,11 +286,6 @@ static int netstandby_nl_ops_standby_exit_rule(struct sk_buff *skb, struct genl_
 	if (!resp) {
 		netstandby_warn("%d:unable to save response data from NL buffer\n", pid);
 		return -ENOMEM;
-	}
-
-	if (netstandby_exit_msg_send(nl_user_rule) != NETSTANDBY_NL_RET_SUCCESS) {
-		netstandby_info("unable to send exit message\n");
-		return -EINVAL;
 	}
 
 	ret = nl_user_rule->ret;
