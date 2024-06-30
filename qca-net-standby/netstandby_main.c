@@ -500,7 +500,7 @@ enum netstandby_nl_ret netstandby_enter_msg_send(struct netstandby_nl_msg *nl_ms
 	struct netstandby_rule *rule = &nl_msg->rule;
 	struct netstandby_enter_msg *msg = &rule->msg.enter;
 	struct netstandby_gbl_ctx *gbl_ctx = &gbl_netstandby_ctx;
-	struct netstandby_system_info *info;
+	struct netstandby_system_info *info = NULL;
 	char *name;
 	struct net_device *return_dev;
 	int i;
@@ -586,20 +586,22 @@ enum netstandby_nl_ret netstandby_enter_msg_send(struct netstandby_nl_msg *nl_ms
 		info = &gbl_ctx->info[NETSTANDBY_SUBSYSTEM_TYPE_PLATFORM];
 	}
 
-	if (info->init_info.enter_cb) {
-		if (info->init_info.enter_cb(info->init_info.app_data, &info->enter_info)) {
-			netstandby_warn("%p: Entry standby failed for subsystem (%d)\n", gbl_ctx, nl_msg->type);
-			nl_msg->ret = NETSTANDBY_NL_RET_FAIL;
-			return NETSTANDBY_NL_RET_FAIL;
+	if (info) {
+		if (info->init_info.enter_cb) {
+			if (info->init_info.enter_cb(info->init_info.app_data, &info->enter_info)) {
+				netstandby_warn("%p: Entry standby failed for subsystem (%d)\n", gbl_ctx, nl_msg->type);
+				nl_msg->ret = NETSTANDBY_NL_RET_FAIL;
+				return NETSTANDBY_NL_RET_FAIL;
+			}
 		}
-	}
 
-	/*
-	 * If completion for enter standby not provided; then send dummy completion to
-	 * daemon
-	 */
-	if (!info->init_info.enter_cmp_cb) {
-		netstandby_send_completion_response(NETSTANDBY_NOTIF_ENTER_COMPLETE, nl_msg->type);
+		/*
+		 * If completion for enter standby not provided; then send dummy completion to
+		 * daemon
+		 */
+		if (!info->init_info.enter_cmp_cb) {
+			netstandby_send_completion_response(NETSTANDBY_NOTIF_ENTER_COMPLETE, nl_msg->type);
+		}
 	}
 
 	nl_msg->ret = NETSTANDBY_NL_RET_SUCCESS;
