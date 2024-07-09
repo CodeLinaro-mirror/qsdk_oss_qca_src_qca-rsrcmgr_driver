@@ -505,6 +505,14 @@ enum netstandby_nl_ret netstandby_enter_msg_send(struct netstandby_nl_msg *nl_ms
 	struct net_device *return_dev;
 	int i;
 
+	/*
+	 * Check if system is already put into power down mode
+	 */
+	if (gbl_ctx->netstandby_state == NETSTANDBY_SYSTEM_ENTER_COMPLETED) {
+		netstandby_warn("System already in standby mode\n");
+		return NETSTANDBY_NL_RET_FAIL;
+	}
+
 	if (!gbl_ctx->iface_configured) {
 		for (i = 0; i < msg->iface_cnt; i++) {
 			enum netstandby_iface_type type;
