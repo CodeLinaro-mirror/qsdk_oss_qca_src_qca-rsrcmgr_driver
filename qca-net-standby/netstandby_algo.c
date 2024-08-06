@@ -12,6 +12,7 @@
 #include <linux/netstandby.h>
 #include <linux/module.h>
 #include <linux/timer.h>
+#include <linux/version.h>
 #include <net/genetlink.h>
 #include <net/sock.h>
 #include <netstandby_nl_if.h>
@@ -263,11 +264,15 @@ void netstandby_nss_sampling_work_cb(struct work_struct *work)
 	/*
 	 * Level#4 analysis
 	 * Iteration of nf conntrach
-	 * init_net.ct.count gives the total number of nf conntrack entries
 	 * If the number of conn track is more than max, then NSS is in non idle state
 	 */
-	nss_telemetry.num_of_nf_ct = atomic_read(&init_net.ct.count);
-
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0))
+	/* nf_conntrack_count() gives the total number of nf conntrack entries */
+	nss_telemetry.num_of_nf_ct = nf_conntrack_count(&init_net);
+#else
+	/* init_net.ct.count gives the total number of nf conntrack entries */
+	nss_telemetry.num_of_nf_ct = atomic_read(&init_net.ct.count);;
+#endif
 	nss_telemetry.ct_data_flows.prev_ct_data_flow_cnt = nss_telemetry.ct_data_flows.curr_ct_data_flow_cnt;
 	nss_telemetry.ct_data_flows.curr_ct_data_flow_cnt = 0;
 	for (bucket = 0; bucket < nf_conntrack_htable_size; bucket++) {
@@ -292,8 +297,8 @@ void netstandby_nss_sampling_work_cb(struct work_struct *work)
 		}
 	}
 
-	netstandby_info("Curr imp ct %d Prev imp ct %d nf ct %u\n", nss_telemetry.ct_data_flows.prev_ct_data_flow_cnt,
-			nss_telemetry.ct_data_flows.curr_ct_data_flow_cnt, atomic_read(&init_net.ct.count));
+	netstandby_info("Curr imp ct %d Prev imp ct %d nf ct %llu\n", nss_telemetry.ct_data_flows.prev_ct_data_flow_cnt,
+			nss_telemetry.ct_data_flows.curr_ct_data_flow_cnt, nss_telemetry.num_of_nf_ct);
 
 	/*
 	 * Send the eth telemetry to RM
