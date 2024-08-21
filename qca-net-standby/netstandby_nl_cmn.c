@@ -136,7 +136,11 @@ struct netstandby_nl_cmn *netstandby_nl_cmn_get_msg(struct genl_family *family, 
 	/*
 	 * validate the common message header version & magic
 	 */
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0))
+	cm = genl_info_userhdr(info);
+#else
 	cm = info->userhdr;
+#endif
 	if (netstandby_nl_cmn_chk_ver(cm, family->version) == false) {
 		netstandby_warn("%d, %s: version mismatch (%d)\n", pid, family->name, cm->version);
 		return NULL;
