@@ -532,7 +532,16 @@ enum netstandby_nl_ret netstandby_enter_msg_send(struct netstandby_nl_msg *nl_ms
 				info = &gbl_ctx->info[NETSTANDBY_SUBSYSTEM_TYPE_WIFI];
 				info->enter_info.dev[i] = return_dev;
 				info->enter_info.iface_cnt++;
-#endif
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0))
+				if (msg->wifi_info.link_id[i] == NETSTANDBY_MSG_WIFI_INVALID_LINK_ID) {
+					netstandby_warn("link_id is not provided for iface=%s\n", info->enter_info.dev[i]->name);
+					return NETSTANDBY_NL_RET_FAIL;
+				}
+				info->enter_info.wifi_info.link_id[i] =
+					msg->wifi_info.link_id[i];
+				info->enter_info.wifi_info.link_id_cnt++;
+#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0) */
+#endif /* RM_QCA_PROP */
 				break;
 			case NETSTANDBY_IFACE_TYPE_PLATFORM:
 				break;
