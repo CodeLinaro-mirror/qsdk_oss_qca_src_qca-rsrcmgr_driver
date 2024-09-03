@@ -20,6 +20,7 @@
  */
 #ifndef __NETSTANDBY_MSG_IF_H
 #define __NETSTANDBY_MSG_IF_H
+#include <linux/version.h>
 
 #ifdef RM_QCA_PROP
 #include <linux/netstandby.h>
@@ -55,6 +56,10 @@
 /* Config file name is in following format: wlanX:<filepath> */
 #define NETSTANDBY_MSG_CONF_FILENAME_MAX 256
 
+#if defined(RM_QCA_PROP) && (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0))
+#define NETSTANDBY_MSG_WIFI_INVALID_LINK_ID -1
+#endif
+
 /*
  * netstandby_trigger_rule
  *	Trigger rule
@@ -87,6 +92,16 @@ struct netstandby_conf_file {
 #endif
 
 /*
+ * netstandby_wifi_info()
+ */
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0))
+struct netstandby_wifi_info {
+	int link_id[NETSTANDBY_MSG_MAX_INTERFACES];
+	int link_id_cnt;
+};
+#endif
+
+/*
  * netstandby_enter_msg()
  */
 struct netstandby_enter_msg {
@@ -96,6 +111,9 @@ struct netstandby_enter_msg {
 	int iface_cnt;		/**< Number of designated wakeup interfaces configured */
 #ifndef RM_QCA_PROP
 	struct netstandby_conf_file *conf_file; /**< Linked list of config files */
+#endif
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0))
+	struct netstandby_wifi_info wifi_info;
 #endif
 };
 
