@@ -138,7 +138,7 @@ void netstandby_nss_sampling_work_cb(struct work_struct *work)
 	struct net_device *dev;
 	uint8_t i = 0;
 	int bucket = 0;
-#if defined(IPQ5322_ERP)
+#if defined(MHT_ETH_INTF)
 	int port_id = 0;
 #endif
 	struct nf_conn *ct;
@@ -240,7 +240,7 @@ void netstandby_nss_sampling_work_cb(struct work_struct *work)
 		if (netif_oper_up(dev)) {
 			netstandby_info("dev name %s switch connected %d\n", dev->name,
 					gbl_ctx->ethinfo[i].switch_connected);
-#if defined(IPQ5322_ERP)
+#if defined(MHT_ETH_INTF)
 			if (gbl_ctx->ethinfo[i].switch_connected) {
 				for (port_id = 0; port_id < MAX_MHT_PORTS; port_id++) {
 					netstandby_info("PortID: %d status %d\n", port_id+1,

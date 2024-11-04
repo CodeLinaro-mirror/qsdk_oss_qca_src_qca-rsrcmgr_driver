@@ -39,11 +39,11 @@
 #define NR_CPUS 4
 #endif /* Kernel */
 
-#if defined(IPQ5322_ERP)
+#if defined(MHT_ETH_INTF)
 #define NETSTANDBY_MAX_ETH_PORTS	2	/* Miami board */
 #else
 #define NETSTANDBY_MAX_ETH_PORTS	6	/* Alder board */
-#endif /* IPQ5322_ERP */
+#endif /* MHT_ETH_INTF */
 #endif /* RM_QCA_PROP */
 
 /*
