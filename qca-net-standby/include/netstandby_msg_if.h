@@ -33,8 +33,6 @@
 #define NETSTANDBY_ENTER_NSS_FLAG_SWITCH_PORT_ALL 0x10
 #define NETSTANDBY_ENTER_NSS_FLAG_SWITCH_PORT_NONE 0x20
 
-#ifdef RM_QCA_PROP
-
 #ifndef __KERNEL__
 #define NR_CPUS 4
 #endif /* Kernel */
@@ -44,8 +42,6 @@
 #else
 #define NETSTANDBY_MAX_ETH_PORTS	6	/* Alder board */
 #endif /* MHT_ETH_INTF */
-#endif /* RM_QCA_PROP */
-
 /*
  * We are reserving below netlink number to create a kernel netlink socket
  * These socket will be used for Kernel to APP and APP to APP communication
@@ -166,6 +162,17 @@ enum netstandby_lan_client_telemetry_type {
 };
 
 /*
+ * netstandby_lan_telemetry
+ * 	LAN client connection event statistics periodically reported to ErP service in user space
+ */
+struct netstandby_lan_telemetry {
+	uint32_t total_active_lan_clients;	/**< Total Number of new active lan clients */
+	uint32_t lan_client_connect_events;	/**< Number of new clients connected */
+	uint32_t lan_client_disconnect_events;	/**< Number of clients disconnected */
+};
+#endif /* RM_QCA_PROP */
+
+/*
  * netstandby_erp_eth_stats
  * 	Eth stats to ERP service
  * 	TODO: Evaluate sending send the raw data to RM
@@ -218,17 +225,6 @@ struct netstandby_erp_nss_telemetry {
 	uint64_t num_of_nf_ct;	/** < Number of conntrack entries in netfilter conntrack table */
 	struct netstandby_erp_ct_data_flows ct_data_flows;	/** < Number of important ct data flows in prev and curr iteration */
 };
-
-/*
- * netstandby_lan_telemetry
- * 	LAN client connection event statistics periodically reported to ErP service in user space
- */
-struct netstandby_lan_telemetry {
-	uint32_t total_active_lan_clients;	/**< Total Number of new active lan clients */
-	uint32_t lan_client_connect_events;	/**< Number of new clients connected */
-	uint32_t lan_client_disconnect_events;	/**< Number of clients disconnected */
-};
-#endif /* RM_QCA_PROP */
 
 #endif /* __NETSTANDBY_MSG_IF_H */
 
