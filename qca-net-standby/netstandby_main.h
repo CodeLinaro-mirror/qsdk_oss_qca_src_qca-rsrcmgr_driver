@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025, Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -62,6 +62,8 @@
 #define SECS_TO_MILLI_SECS 1000
 #endif
 
+#define NETSTANDBY_ACL_COUNT_MAX	8
+
 extern struct netstandby_gbl_ctx gbl_netstandby_ctx;
 
 /*
@@ -104,7 +106,8 @@ struct netstandby_system_info {
 	/*
 	 * Socket information for event completion/exit completion/trigger completion
 	 */
-	int acl_id;
+	int acl_id[NETSTANDBY_ACL_COUNT_MAX];
+	int acl_cnt;
 	bool is_acl_valid;
 	bool acl_id_register;
 	struct sock *nl_sock;

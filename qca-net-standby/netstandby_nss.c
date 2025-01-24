@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025, Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -215,7 +215,7 @@ enum netstandby_status netstandby_acl_rule_create(struct netstandby_trigger_rule
 		return NETSTANDBY_ACL_REGISTER_FAIL;
 	}
 
-	info->acl_id = rule.rule_id;
+	info->acl_id[0] = rule.rule_id;
 	info->is_acl_valid = true;
 
 	return NETSTANDBY_SUCCESS;
