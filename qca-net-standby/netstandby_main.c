@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025, Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -560,6 +560,7 @@ enum netstandby_nl_ret netstandby_enter_msg_send(struct netstandby_nl_msg *nl_ms
 		info = &gbl_ctx->info[nl_msg->type];
 		info->is_acl_valid = false;
 		info->acl_id_register = false;
+		info->acl_cnt = msg->nss_info.acl_cnt;
 
 		/*
 		 * For Miami Manhattan, we need to pass the user passed ID
@@ -580,13 +581,18 @@ enum netstandby_nl_ret netstandby_enter_msg_send(struct netstandby_nl_msg *nl_ms
 					return NETSTANDBY_NL_RET_FAIL;
 				}
 			} else if ((msg->nss_info.flags & NETSTANDBY_ENTER_NSS_FLAG_ACL_ID) == NETSTANDBY_ENTER_NSS_FLAG_ACL_ID) {
-				if (netstandby_acl_register(msg->nss_info.acl_id)) {
+				if (i >= NETSTANDBY_ACL_COUNT_MAX) {
+					netstandby_warn("acl limit exceeded\n");
+					return NETSTANDBY_NL_RET_FAIL;
+				}
+
+				if (netstandby_acl_register(msg->nss_info.acl_id[i])) {
 					return NETSTANDBY_NL_RET_FAIL;
 				}
 
 				info->acl_id_register = true;
 				info->is_acl_valid = true;
-				info->acl_id = msg->nss_info.acl_id;
+				info->acl_id[i] = msg->nss_info.acl_id[i];
 			} else if ((msg->nss_info.flags & NETSTANDBY_ENTER_NSS_FLAG_ACL_TUPLE) == NETSTANDBY_ENTER_NSS_FLAG_ACL_TUPLE) {
 				if (netstandby_acl_rule_create(&msg->trigger_rule, info->enter_info.dev[i], false)) {
 					return NETSTANDBY_NL_RET_FAIL;
@@ -653,9 +659,12 @@ enum netstandby_nl_ret netstandby_exit_msg_send(struct netstandby_nl_msg *nl_msg
 			 */
 			if (info->is_acl_valid) {
 				if (info->acl_id_register) {
-					netstandby_acl_unregister(info->acl_id);
+					int acl_count = info->acl_cnt;
+					for (int i = 0; i < acl_count; i++) {
+						netstandby_acl_unregister(info->acl_id[i]);
+					}
 				} else {
-					netstandby_acl_rule_destroy(info->acl_id);
+					netstandby_acl_rule_destroy(info->acl_id[0]);
 				}
 			}
 

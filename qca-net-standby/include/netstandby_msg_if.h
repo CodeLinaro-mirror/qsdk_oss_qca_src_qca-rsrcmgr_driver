@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025, Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -56,6 +56,8 @@
 #define NETSTANDBY_MSG_WIFI_INVALID_LINK_ID -1
 #endif
 
+#define NETSTANDBY_ACL_COUNT_MAX	8
+
 /*
  * netstandby_trigger_rule
  *	Trigger rule
@@ -73,9 +75,10 @@ struct netstandby_trigger_rule {
  * netstandby_nss_info()
  */
 struct netstandby_nss_info {
-	int acl_id;		/**< ID of the custom ACL rule created using ppecfg */
-	uint32_t flags;		/**< Flag to identify features supported */
-	uint8_t switch_port_id;	/**< ID (1 to 4) of the port of a switch which is used for trigger (optional) */
+	int acl_id[NETSTANDBY_ACL_COUNT_MAX];	/**< IDs of the custom ACL rules created using ppecfg */
+	int acl_cnt;				/**< Number of ACL rules configured for standby entry */
+	uint32_t flags;				/**< Flag to identify features supported */
+	uint8_t switch_port_id;			/**< ID (1 to 4) of the port of a switch which is used for trigger (optional) */
 };
 
 #ifndef RM_QCA_PROP
