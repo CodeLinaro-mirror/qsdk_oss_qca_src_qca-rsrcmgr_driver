@@ -363,12 +363,6 @@ bool netstandby_nss_telemetry_to_rm(struct netstandby_erp_nss_telemetry *nss_tel
 	return true;
 }
 
-#else
-bool netstandby_nss_telemetry_to_rm(struct netstandby_erp_nss_telemetry *nss_telemetry)
-{
-	return false;
-}
-
 #endif /* RM_QCA_PROP && !RM_QCA_256M_PROFILE */
 
 /*
@@ -386,11 +380,11 @@ enum netstandby_nl_ret netstandby_deinit_msg_send(struct netstandby_nl_msg *nl_m
 		return NETSTANDBY_NL_RET_FAIL;
 	}
 
-#ifdef RM_QCA_PROP
+#if defined(RM_QCA_PROP) && !defined(RM_QCA_256M_PROFILE)
 	if (gbl_ctx->nss_sample.sampling_time_millisec) {
 		cancel_delayed_work_sync(&gbl_ctx->nss_sample.sampling_work);
 	}
-#endif
+#endif /* RM_QCA_PROP && !RM_QCA_256M_PROFILE */
 
 	netlink_kernel_release(info->nl_sock);
 	info->nl_sock = NULL;
@@ -473,7 +467,7 @@ enum netstandby_nl_ret netstandby_init_msg_send(struct netstandby_nl_msg *nl_msg
 		}
 	}
 
-#ifdef RM_QCA_PROP
+#if defined(RM_QCA_PROP) && !defined(RM_QCA_256M_PROFILE)
 	if (rule->msg.init.nss_sampling_timer)  {
 		gbl_ctx->nss_sample.sampling_time_millisec = (SECS_TO_MILLI_SECS * rule->msg.init.nss_sampling_timer);
 		schedule_delayed_work(&gbl_ctx->nss_sample.sampling_work,
@@ -486,7 +480,7 @@ enum netstandby_nl_ret netstandby_init_msg_send(struct netstandby_nl_msg *nl_msg
 		gbl_ctx->wan_iface_cnt = rule->msg.init.wan_iface_cnt;
 		netstandby_info("ERP service is enabled with sample timer as %d\n", rule->msg.init.nss_sampling_timer);
 	}
-#endif
+#endif /* RM_QCA_PROP && !RM_QCA_256M_PROFILE */
 
 	nl_msg->ret = NETSTANDBY_NL_RET_SUCCESS;
 	return NETSTANDBY_NL_RET_SUCCESS;

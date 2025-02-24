@@ -33,6 +33,7 @@
 #define NETSTANDBY_ENTER_NSS_FLAG_SWITCH_PORT_ALL 0x10
 #define NETSTANDBY_ENTER_NSS_FLAG_SWITCH_PORT_NONE 0x20
 
+#if defined(RM_QCA_PROP) && !defined(RM_QCA_256M_PROFILE)
 #ifndef __KERNEL__
 #define NR_CPUS 4
 #endif /* Kernel */
@@ -42,6 +43,8 @@
 #else
 #define NETSTANDBY_MAX_ETH_PORTS	6	/* Alder board */
 #endif /* MHT_ETH_INTF */
+#endif /* RM_QCA_PROP && !RM_QCA_256M_PROFILE */
+
 /*
  * We are reserving below netlink number to create a kernel netlink socket
  * These socket will be used for Kernel to APP and APP to APP communication
@@ -128,12 +131,12 @@ struct netstandby_exit_msg {
  */
 struct netstandby_init_msg {
 	pid_t pid;			/**< PID of the user daemon process that runs the netstandy state machine */
-#ifdef RM_QCA_PROP
+#if defined(RM_QCA_PROP) && !defined(RM_QCA_256M_PROFILE)
 	uint32_t nss_sampling_timer;	/**< NSS sampling timer value in seconds for sending the stats */
 	char wan_intf[NETSTANDBY_MAX_ETH_PORTS][NETSTANDBY_MSG_IFNAME_MAX];	/* WAN iface for ignoring the neigh add/delete events
 											   in telemetry stats */
 	int wan_iface_cnt;	/**< Number of WAN ifaces */
-#endif
+#endif /* RM_QCA_PROP && !RM_QCA_256M_PROFILE */
 };
 
 /*
@@ -151,7 +154,7 @@ struct netstandby_rule {
 	} msg;
 };
 
-#ifdef RM_QCA_PROP
+#if defined(RM_QCA_PROP) && !defined(RM_QCA_256M_PROFILE)
 /*
  * netstandby_lan_client_telemetry_type
  *	Lan client telemetry bucket
@@ -173,7 +176,6 @@ struct netstandby_lan_telemetry {
 	uint32_t lan_client_connect_events;	/**< Number of new clients connected */
 	uint32_t lan_client_disconnect_events;	/**< Number of clients disconnected */
 };
-#endif /* RM_QCA_PROP */
 
 /*
  * netstandby_erp_eth_stats
@@ -228,6 +230,7 @@ struct netstandby_erp_nss_telemetry {
 	uint64_t num_of_nf_ct;	/** < Number of conntrack entries in netfilter conntrack table */
 	struct netstandby_erp_ct_data_flows ct_data_flows;	/** < Number of important ct data flows in prev and curr iteration */
 };
+#endif /* RM_QCA_PROP && !RM_QCA_256M_PROFILE */
 
 #endif /* __NETSTANDBY_MSG_IF_H */
 
