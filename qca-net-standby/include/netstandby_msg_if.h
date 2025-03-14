@@ -33,7 +33,7 @@
 #define NETSTANDBY_ENTER_NSS_FLAG_SWITCH_PORT_ALL 0x10
 #define NETSTANDBY_ENTER_NSS_FLAG_SWITCH_PORT_NONE 0x20
 
-#if defined(RM_QCA_PROP) && !defined(RM_QCA_256M_PROFILE)
+#ifndef RM_QCA_256M_PROFILE
 #ifndef __KERNEL__
 #define NR_CPUS 4
 #endif /* Kernel */
@@ -43,8 +43,7 @@
 #else
 #define NETSTANDBY_MAX_ETH_PORTS	6	/* Alder board */
 #endif /* MHT_ETH_INTF */
-#endif /* RM_QCA_PROP && !RM_QCA_256M_PROFILE */
-
+#endif /* !RM_QCA_256M_PROFILE */
 /*
  * We are reserving below netlink number to create a kernel netlink socket
  * These socket will be used for Kernel to APP and APP to APP communication
@@ -55,7 +54,7 @@
 /* Config file name is in following format: wlanX:<filepath> */
 #define NETSTANDBY_MSG_CONF_FILENAME_MAX 256
 
-#if defined(RM_QCA_PROP) && (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0))
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0))
 #define NETSTANDBY_MSG_WIFI_INVALID_LINK_ID -1
 #endif
 
@@ -84,14 +83,12 @@ struct netstandby_nss_info {
 	uint8_t switch_port_id;			/**< ID (1 to 4) of the port of a switch which is used for trigger (optional) */
 };
 
-#ifndef RM_QCA_PROP
 struct netstandby_conf_file {
 	char ifname[NETSTANDBY_MSG_IFNAME_MAX];
 	char filename[NETSTANDBY_MSG_CONF_FILENAME_MAX];
 	struct netstandby_conf_file *prev;
 	struct netstandby_conf_file *next;
 };
-#endif
 
 /*
  * netstandby_wifi_info()
@@ -111,9 +108,7 @@ struct netstandby_enter_msg {
 	struct netstandby_trigger_rule trigger_rule;		/**< Trigger rule */
 	char designated_wakeup_intf[NETSTANDBY_MSG_MAX_INTERFACES][NETSTANDBY_MSG_IFNAME_MAX];	/**< List of designated interface names for trigger based wakeup */
 	int iface_cnt;		/**< Number of designated wakeup interfaces configured */
-#ifndef RM_QCA_PROP
 	struct netstandby_conf_file *conf_file; /**< Linked list of config files */
-#endif
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0))
 	struct netstandby_wifi_info wifi_info;
 #endif
@@ -131,12 +126,12 @@ struct netstandby_exit_msg {
  */
 struct netstandby_init_msg {
 	pid_t pid;			/**< PID of the user daemon process that runs the netstandy state machine */
-#if defined(RM_QCA_PROP) && !defined(RM_QCA_256M_PROFILE)
+#ifndef RM_QCA_256M_PROFILE
 	uint32_t nss_sampling_timer;	/**< NSS sampling timer value in seconds for sending the stats */
 	char wan_intf[NETSTANDBY_MAX_ETH_PORTS][NETSTANDBY_MSG_IFNAME_MAX];	/* WAN iface for ignoring the neigh add/delete events
 											   in telemetry stats */
 	int wan_iface_cnt;	/**< Number of WAN ifaces */
-#endif /* RM_QCA_PROP && !RM_QCA_256M_PROFILE */
+#endif /* !RM_QCA_256M_PROFILE */
 };
 
 /*
@@ -154,7 +149,7 @@ struct netstandby_rule {
 	} msg;
 };
 
-#if defined(RM_QCA_PROP) && !defined(RM_QCA_256M_PROFILE)
+#ifndef RM_QCA_256M_PROFILE
 /*
  * netstandby_lan_client_telemetry_type
  *	Lan client telemetry bucket
@@ -230,7 +225,7 @@ struct netstandby_erp_nss_telemetry {
 	uint64_t num_of_nf_ct;	/** < Number of conntrack entries in netfilter conntrack table */
 	struct netstandby_erp_ct_data_flows ct_data_flows;	/** < Number of important ct data flows in prev and curr iteration */
 };
-#endif /* RM_QCA_PROP && !RM_QCA_256M_PROFILE */
+#endif /* !RM_QCA_256M_PROFILE */
 
 #endif /* __NETSTANDBY_MSG_IF_H */
 
