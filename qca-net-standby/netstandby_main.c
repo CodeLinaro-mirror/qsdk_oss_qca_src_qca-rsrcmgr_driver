@@ -571,7 +571,11 @@ enum netstandby_nl_ret netstandby_enter_msg_send(struct netstandby_nl_msg *nl_ms
 		/* Add default ACL rule if acl_rule is not provided by the user */
 		for (i = 0; i < info->enter_info.iface_cnt; i++) {
 			if ((msg->nss_info.flags & NETSTANDBY_ENTER_NSS_FLAG_ACL_DEFAULT) == NETSTANDBY_ENTER_NSS_FLAG_ACL_DEFAULT) {
-				if (netstandby_acl_rule_create(&msg->trigger_rule, info->enter_info.dev[i], true)) {
+				if (netstandby_acl_rule_create(&msg->trigger_rule, info->enter_info.dev[i], i, true)) {
+					/* If any of the ACL rule create fails, destroy all ACL rules */
+					while (i) {
+						netstandby_acl_rule_destroy(info->acl_id[--i]);
+					};
 					return NETSTANDBY_NL_RET_FAIL;
 				}
 			} else if ((msg->nss_info.flags & NETSTANDBY_ENTER_NSS_FLAG_ACL_ID) == NETSTANDBY_ENTER_NSS_FLAG_ACL_ID) {
@@ -581,6 +585,10 @@ enum netstandby_nl_ret netstandby_enter_msg_send(struct netstandby_nl_msg *nl_ms
 				}
 
 				if (netstandby_acl_register(msg->nss_info.acl_id[i])) {
+					/* If any of the ACL register fails, destroy all ACL rules */
+					while (i) {
+						netstandby_acl_unregister(info->acl_id[--i]);
+					};
 					return NETSTANDBY_NL_RET_FAIL;
 				}
 
@@ -588,8 +596,13 @@ enum netstandby_nl_ret netstandby_enter_msg_send(struct netstandby_nl_msg *nl_ms
 				info->is_acl_valid = true;
 				info->acl_id[i] = msg->nss_info.acl_id[i];
 			} else if ((msg->nss_info.flags & NETSTANDBY_ENTER_NSS_FLAG_ACL_TUPLE) == NETSTANDBY_ENTER_NSS_FLAG_ACL_TUPLE) {
-				if (netstandby_acl_rule_create(&msg->trigger_rule, info->enter_info.dev[i], false)) {
+				if (netstandby_acl_rule_create(&msg->trigger_rule, info->enter_info.dev[i], i, false)) {
+					/* If any of the ACL rule create fails, destroy all ACL rules */
+					while (i) {
+						netstandby_acl_rule_destroy(info->acl_id[--i]);
+					};
 					return NETSTANDBY_NL_RET_FAIL;
+
 				}
 			}
 		}
@@ -658,7 +671,9 @@ enum netstandby_nl_ret netstandby_exit_msg_send(struct netstandby_nl_msg *nl_msg
 						netstandby_acl_unregister(info->acl_id[i]);
 					}
 				} else {
-					netstandby_acl_rule_destroy(info->acl_id[0]);
+					for (int i = 0; i < info->enter_info.iface_cnt; i++) {
+						netstandby_acl_rule_destroy(info->acl_id[i]);
+					}
 				}
 			}
 

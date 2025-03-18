@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025, Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -62,5 +62,5 @@ enum netstandby_status netstandby_acl_rule_destroy(ppe_acl_rule_id_t acl_id);
  * netstandby_acl_rule_create()
  *	Create default ACL rule
  */
-enum netstandby_status netstandby_acl_rule_create(struct netstandby_trigger_rule *trigger_rule, struct net_device *dev, bool default_acl);
+enum netstandby_status netstandby_acl_rule_create(struct netstandby_trigger_rule *trigger_rule, struct net_device *dev, int rule_idx, bool default_acl);
 #endif

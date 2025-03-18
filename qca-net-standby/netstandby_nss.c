@@ -132,7 +132,7 @@ enum netstandby_status netstandby_acl_rule_destroy(ppe_acl_rule_id_t id)
  * netstandby_acl_rule_create()
  *	Default ACL rule create
  */
-enum netstandby_status netstandby_acl_rule_create(struct netstandby_trigger_rule *trigger_rule, struct net_device *dev, bool is_default)
+enum netstandby_status netstandby_acl_rule_create(struct netstandby_trigger_rule *trigger_rule, struct net_device *dev, int rule_idx, bool is_default)
 {
 	struct netstandby_gbl_ctx *gbl_ctx = &gbl_netstandby_ctx;
 	struct netstandby_system_info *info = &gbl_ctx->info[NETSTANDBY_SUBSYSTEM_TYPE_NSS];
@@ -215,7 +215,7 @@ enum netstandby_status netstandby_acl_rule_create(struct netstandby_trigger_rule
 		return NETSTANDBY_ACL_REGISTER_FAIL;
 	}
 
-	info->acl_id[0] = rule.rule_id;
+	info->acl_id[rule_idx] = rule.rule_id;
 	info->is_acl_valid = true;
 
 	return NETSTANDBY_SUCCESS;
