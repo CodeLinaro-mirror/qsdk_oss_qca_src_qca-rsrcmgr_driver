@@ -49,36 +49,26 @@ void netstandby_trigger_work(struct work_struct *work)
  * netstandby_acl_process_buf()
  *	Process acl index notification from ppe driver
  */
-bool netstandby_acl_process_buf(void *app_data, void *skb)
+bool netstandby_acl_process_buf(void *app_data, __attribute__((unused))void *skb)
 {
 	struct netstandby_gbl_ctx *gbl_ctx = &gbl_netstandby_ctx;
-	struct sk_buff *skb_local = (struct sk_buff *)skb;
-
-	/*
-	 * Send the SKB to stack
-	 */
-	skb_local->protocol = eth_type_trans(skb_local, skb_local->dev);
-	skb_local->pkt_type = PACKET_HOST;
-	netif_receive_skb(skb_local);
-
-	netstandby_info("Processing the trigger packet in netstandby driver\n");
 
 	/*
 	 * To avoid burst of netlink message in the NL socket,
-	 * we are sending the trigger packet only once to daemon after enter is completed.
+	 * we are sending the trigger only once to daemon after enter is completed.
 	 * If the NL messages are sent in a burst, the exit completion of BSP is lost in core kernel.
-	 * Also, when standby EXIT is in process, we will not send the trigger packet.
+	 * Also, when standby EXIT is in process, we will not send the trigger.
 	 */
 	if ((gbl_ctx->netstandby_state == NETSTANDBY_SYSTEM_ENTER_COMPLETED) &&
 	    (!gbl_ctx->netstandby_first_trigger)) {
 		gbl_ctx->netstandby_first_trigger = true;
 		schedule_delayed_work(&gbl_ctx->trigger_work, msecs_to_jiffies(1));
 	} else if (gbl_ctx->netstandby_state == NETSTANDBY_SYSTEM_EXIT_IN_PROGRESS) {
-		return true;
+		return false;
 	}
 
 	schedule_delayed_work(&gbl_ctx->trigger_work, msecs_to_jiffies(100));
-	return true;
+	return false;
 }
 
 /*
