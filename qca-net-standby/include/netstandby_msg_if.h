@@ -55,7 +55,7 @@
 /* Config file name is in following format: wlanX:<filepath> */
 #define NETSTANDBY_MSG_CONF_FILENAME_MAX 256
 
-#if defined(RM_QCA_PROP) && (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0))
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0))
 #define NETSTANDBY_MSG_WIFI_INVALID_LINK_ID -1
 #endif
 
