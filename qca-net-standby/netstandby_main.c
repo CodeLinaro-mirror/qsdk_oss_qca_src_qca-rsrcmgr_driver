@@ -522,7 +522,6 @@ enum netstandby_nl_ret netstandby_enter_msg_send(struct netstandby_nl_msg *nl_ms
 				break;
 
 			case NETSTANDBY_IFACE_TYPE_WIFI:
-#ifdef RM_QCA_PROP
 				info = &gbl_ctx->info[NETSTANDBY_SUBSYSTEM_TYPE_WIFI];
 				info->enter_info.dev[i] = return_dev;
 				info->enter_info.iface_cnt++;
@@ -535,7 +534,6 @@ enum netstandby_nl_ret netstandby_enter_msg_send(struct netstandby_nl_msg *nl_ms
 					msg->wifi_info.link_id[i];
 				info->enter_info.wifi_info.link_id_cnt++;
 #endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0) */
-#endif /* RM_QCA_PROP */
 				break;
 			case NETSTANDBY_IFACE_TYPE_PLATFORM:
 				break;
