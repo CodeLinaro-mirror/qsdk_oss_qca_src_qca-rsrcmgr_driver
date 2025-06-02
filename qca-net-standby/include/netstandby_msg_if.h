@@ -91,6 +91,7 @@ struct netstandby_conf_file {
 	char filename[NETSTANDBY_MSG_CONF_FILENAME_MAX];
 	struct netstandby_conf_file *prev;
 	struct netstandby_conf_file *next;
+	bool split_file;
 };
 
 /*
