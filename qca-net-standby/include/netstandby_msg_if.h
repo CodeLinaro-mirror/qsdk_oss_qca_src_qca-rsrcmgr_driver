@@ -38,12 +38,15 @@
 #define NR_CPUS 4
 #endif /* Kernel */
 
-#if defined(MHT_ETH_INTF)
+#if defined(TARGET_IPQ53xx)
 #define NETSTANDBY_MAX_ETH_PORTS	2	/* Miami board */
+#elif defined(TARGET_IPQ54xx)
+#define NETSTANDBY_MAX_ETH_PORTS        3       /* Marina board */
 #else
 #define NETSTANDBY_MAX_ETH_PORTS	6	/* Alder board */
-#endif /* MHT_ETH_INTF */
+#endif /* ETH Ports */
 #endif /* !RM_QCA_256M_PROFILE */
+
 /*
  * We are reserving below netlink number to create a kernel netlink socket
  * These socket will be used for Kernel to APP and APP to APP communication
