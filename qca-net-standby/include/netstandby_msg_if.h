@@ -71,6 +71,9 @@ struct netstandby_trigger_rule {
 	uint32_t dest_ip[4];                    /**< Destination IP address */
 	uint8_t dmac[6];                        /**< Destination MAC address */
 	int protocol;                           /**< Protocol */
+#ifndef RM_QCA_PROP
+	int wifi_protocol;                      /**< WiFi Protocol for open profiles */
+#endif
 };
 
 /*
