@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2024-2025, Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: ISC
  */
 
@@ -24,11 +24,16 @@
 #include <linux/kernel_stat.h>
 
 #define NETSTANDBY_DNS_PORT	53
+#define NETSTANDBY_NTP_PORT	123
+#define NETSTANDBY_IGMP_PROTOCOL	2
 #define NETSTANDBY_MCAST_IPV4_ALLHOST_ADDR   0xe0000001 /* 224.0.0.1 */
+#define NETSTANDBY_MCAST_IPV4_DNS_ADDR	0xe00000fb /* 224.0.0.251 */
 #define NETSTANDBY_MCAST_IPV4_SSDP_ADDR	0xeffffffa /* 239.255.255.250 */
-#define NETSTANDBY_MCAST_IPV4_DNS_ADDR	0xeffffffb /* 239.255.255.251 */
+#define NETSTANDBY_MCAST_IPV4_PIM_ADDR	0xe000000d /* 224.0.0.13 */
+#define NETSTANDBY_MCAST_IPV4_DNS_ADDR_LOCAL	0xeffffffb /* 239.255.255.251 */
 #define NETSTANDBY_MCAST_IPV6_ALLNODES_ADDR	0x2000100	/* ff02:0000:0000:0000:0000:0000:0001:0002 */
 #define NETSTANDBY_MCAST_IPV6_NEIGHDIS_ADDR	0xfb000000	/* ff02:0000:0000:0000:0000:0000:0000:00fb */
+#define NETSTANDBY_MCAST_IPV6_LINK_LOCAL	0x16000000	/* ff02:0000:0000:0000:0000:0000:0001:0016 */
 
 int netstandby_nss_telemetry_retry = 0;
 struct netstandby_erp_nss_telemetry nss_telemetry;
@@ -68,6 +73,12 @@ bool netstandby_is_flow_not_important(struct nf_conn *ct)
 	dport = ntohs(orig_tuple->dst.u.all);
 
 	/*
+	 * Ignore IGMP Protocol packets
+	 */
+	if (orig_tuple->dst.protonum == NETSTANDBY_IGMP_PROTOCOL)
+		return true;
+
+	/*
 	 * Ignore loopback, broadcast flows. We also ignore multicast flows that are created in
 	 * conntrack table for periodic network management
 	 */
@@ -80,7 +91,11 @@ bool netstandby_is_flow_not_important(struct nf_conn *ct)
 				return true;
 			} else if (ntohl(orig_tuple->dst.u3.ip) == NETSTANDBY_MCAST_IPV4_SSDP_ADDR) {
 				return true;
+			} else if (ntohl(orig_tuple->dst.u3.ip) == NETSTANDBY_MCAST_IPV4_DNS_ADDR_LOCAL) {
+				return true;
 			} else if (ntohl(orig_tuple->dst.u3.ip) == NETSTANDBY_MCAST_IPV4_DNS_ADDR) {
+				return true;
+			} else if (ntohl(orig_tuple->dst.u3.ip) == NETSTANDBY_MCAST_IPV4_PIM_ADDR) {
 				return true;
 			}
 		} else if (orig_tuple->dst.u3.ip == INADDR_BROADCAST) {
@@ -95,6 +110,8 @@ bool netstandby_is_flow_not_important(struct nf_conn *ct)
 				return true;
 			} else if (orig_tuple->dst.u3.in6.s6_addr32[3] == NETSTANDBY_MCAST_IPV6_NEIGHDIS_ADDR) {
 				return true;
+			} else if (orig_tuple->dst.u3.in6.s6_addr32[3]  == NETSTANDBY_MCAST_IPV6_LINK_LOCAL) {
+				return true;
 			}
 		} else if (ipv6_addr_loopback(&orig_tuple->src.u3.in6)) {
 			return true;
@@ -104,9 +121,14 @@ bool netstandby_is_flow_not_important(struct nf_conn *ct)
 	/*
 	 * Ignore DNS flows
 	 */
-	if (dport == NETSTANDBY_DNS_PORT) {
+	if (dport == NETSTANDBY_DNS_PORT)
 		return true;
-	}
+
+	/*
+	 * Ignore NTP flows
+	 */
+	if (dport == NETSTANDBY_NTP_PORT)
+		return true;
 
 	if (ct->tuplehash[IP_CT_DIR_ORIGINAL].tuple.src.l3num == NFPROTO_IPV4) {
 		netstandby_info("IPV4 imp flow : src=%pI4, dst=%pI4, proto=%u status %ld l3 num %d sport %d dport %d\n",
