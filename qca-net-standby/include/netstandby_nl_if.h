@@ -123,6 +123,8 @@ enum netstandby_nl_system_state {
 	NETSTANDBY_NL_SYSTEM_EXIT_IN_PROGRESS,             /**< netstandby system exit in progress */
 	NETSTANDBY_NL_SYSTEM_TRIGGER_IN_PROGRESS,          /**< netstandby system handling trigger from SS */
 	NETSTANDBY_NL_SYSTEM_EXIT_COMPLETE,                /**< netstandby system in exit complete state */
+	NETSTANDBY_NL_SYSTEM_IN_IDLE_STATE,                /**< netstandby system in idle state */
+	NETSTANDBY_NL_SYSTEM_IN_NON_IDLE_STATE,            /**< netstandby system in non idle state */
 	NETSTANDBY_NL_SYSTEM_MAX,
 };
 
