@@ -339,5 +339,14 @@ bool netstandby_nl_exit(void)
 		return false;
 	}
 
+	/*
+	 * Release the socket if it was not released by the user
+	 */
+	if (gbl_netstandby_ctx.info[NETSTANDBY_SUBSYSTEM_TYPE_NSS].nl_sock) {
+		netstandby_info("Releasing leaked nl_sock\n");
+		netlink_kernel_release(gbl_netstandby_ctx.info[NETSTANDBY_SUBSYSTEM_TYPE_NSS].nl_sock);
+		gbl_netstandby_ctx.info[NETSTANDBY_SUBSYSTEM_TYPE_NSS].nl_sock = NULL;
+	}
+
 	return true;
 }
