@@ -27,6 +27,7 @@ enum netstandby_status {
 	NETSTANDBY_CB_REGISTER_FAIL = 1,
 	NETSTANDBY_DESIGNATED_IFACE_INVALID = 2,
 	NETSTANDBY_ACL_REGISTER_FAIL = 3,
+	NETSTANDBY_MEM_ALLOC_FAIL = 4,
 };
 
 struct netstandby_nss_data {

@@ -126,87 +126,95 @@ enum netstandby_status netstandby_acl_rule_create(struct netstandby_trigger_rule
 {
 	struct netstandby_gbl_ctx *gbl_ctx = &gbl_netstandby_ctx;
 	struct netstandby_system_info *info = &gbl_ctx->info[NETSTANDBY_SUBSYSTEM_TYPE_NSS];
-	struct ppe_acl_rule rule = {0};
+	struct ppe_acl_rule *rule;
 	int status;
 
-	if (is_default) {
-		rule.stype = PPE_ACL_RULE_SRC_TYPE_DEV;
-		memcpy((void *)rule.src.dev_name, (void *)dev->name, sizeof(dev->name));
+	rule = kzalloc(sizeof(*rule), GFP_KERNEL);
+	if (!rule) {
+		netstandby_warn("Failed to allocate memory for ACL rule\n");
+		return NETSTANDBY_MEM_ALLOC_FAIL;
+	}
 
-		rule.action.fwd_cmd = PPE_ACL_FWD_CMD_REDIR;
-		rule.valid_flags = (1 << PPE_ACL_RULE_MATCH_TYPE_ETHER_TYPE);
-		rule.action.flags |= PPE_ACL_RULE_ACTION_FLAG_FW_CMD;
-		rule.cmn.cmn_flags |= PPE_ACL_RULE_CMN_FLAG_NO_RULEID | PPE_ACL_RULE_CMN_FLAG_METADATA_EN;
+	if (is_default) {
+		rule->dev_type = PPE_ACL_RULE_DEV_TYPE_SRC_DEV;
+		memcpy((void *)rule->dev.dev_name, (void *)dev->name, sizeof(dev->name));
+
+		rule->action.fwd_cmd = PPE_ACL_FWD_CMD_REDIR;
+		rule->valid_flags = (1 << PPE_ACL_RULE_MATCH_TYPE_ETHER_TYPE);
+		rule->action.flags |= PPE_ACL_RULE_ACTION_FLAG_FW_CMD;
+		rule->cmn.cmn_flags |= PPE_ACL_RULE_CMN_FLAG_NO_RULEID | PPE_ACL_RULE_CMN_FLAG_METADATA_EN;
 
 		if ((trigger_rule->valid_flags & NETSTANDBY_EXIT_TRIGGER_RULE_IPV6) == NETSTANDBY_EXIT_TRIGGER_RULE_IPV6)
-			rule.rules[PPE_ACL_RULE_MATCH_TYPE_ETHER_TYPE].rule.ether_type.l2_proto = ETH_P_IPV6;
+			rule->rules[PPE_ACL_RULE_MATCH_TYPE_ETHER_TYPE].rule.ether_type.l2_proto = ETH_P_IPV6;
 		else
-			rule.rules[PPE_ACL_RULE_MATCH_TYPE_ETHER_TYPE].rule.ether_type.l2_proto = ETH_P_IP;
+			rule->rules[PPE_ACL_RULE_MATCH_TYPE_ETHER_TYPE].rule.ether_type.l2_proto = ETH_P_IP;
 	} else {
 		if ((trigger_rule->valid_flags & NETSTANDBY_EXIT_TRIGGER_RULE_PROTOCOL_VALID) == NETSTANDBY_EXIT_TRIGGER_RULE_PROTOCOL_VALID) {
-			rule.valid_flags |= PPE_ACL_RULE_MATCH_TYPE_PROTO_NEXTHDR_VALID;
-			rule.rules[PPE_ACL_RULE_MATCH_TYPE_PROTO_NEXTHDR].rule.proto_nexthdr.l3_v4proto_v6nexthdr = trigger_rule->protocol;
+			rule->valid_flags |= PPE_ACL_RULE_MATCH_TYPE_PROTO_NEXTHDR_VALID;
+			rule->rules[PPE_ACL_RULE_MATCH_TYPE_PROTO_NEXTHDR].rule.proto_nexthdr.l3_v4proto_v6nexthdr = trigger_rule->protocol;
 		}
 
 		if ((trigger_rule->valid_flags & NETSTANDBY_EXIT_TRIGGER_RULE_SRC_MAC_VALID) == NETSTANDBY_EXIT_TRIGGER_RULE_SRC_MAC_VALID) {
-			rule.valid_flags |= PPE_ACL_RULE_MATCH_TYPE_SMAC_VALID;
-			memcpy(&rule.rules[PPE_ACL_RULE_MATCH_TYPE_SMAC].rule.smac.mac, trigger_rule->smac, sizeof(trigger_rule->smac));
+			rule->valid_flags |= PPE_ACL_RULE_MATCH_TYPE_SMAC_VALID;
+			memcpy(&rule->rules[PPE_ACL_RULE_MATCH_TYPE_SMAC].rule.smac.mac, trigger_rule->smac, sizeof(trigger_rule->smac));
 		}
 
 		if ((trigger_rule->valid_flags & NETSTANDBY_EXIT_TRIGGER_RULE_DEST_MAC_VALID) == NETSTANDBY_EXIT_TRIGGER_RULE_DEST_MAC_VALID) {
-			rule.valid_flags |= PPE_ACL_RULE_MATCH_TYPE_DMAC_VALID;
-			memcpy(&rule.rules[PPE_ACL_RULE_MATCH_TYPE_DMAC].rule.dmac.mac, trigger_rule->dmac, sizeof(trigger_rule->dmac));
+			rule->valid_flags |= PPE_ACL_RULE_MATCH_TYPE_DMAC_VALID;
+			memcpy(&rule->rules[PPE_ACL_RULE_MATCH_TYPE_DMAC].rule.dmac.mac, trigger_rule->dmac, sizeof(trigger_rule->dmac));
 		}
 
 		if ((trigger_rule->valid_flags & NETSTANDBY_EXIT_TRIGGER_RULE_IPV6) == NETSTANDBY_EXIT_TRIGGER_RULE_IPV6) {
 			if ((trigger_rule->valid_flags & NETSTANDBY_EXIT_TRIGGER_RULE_SRC_IP_VALID) == NETSTANDBY_EXIT_TRIGGER_RULE_SRC_IP_VALID) {
-				memcpy(&rule.rules[PPE_ACL_RULE_MATCH_TYPE_SIP].rule.sip.ip, trigger_rule->src_ip, sizeof(trigger_rule->src_ip));
-				rule.rules[PPE_ACL_RULE_MATCH_TYPE_SIP].rule.sip.ip_type = PPE_ACL_IP_TYPE_V6;
-				rule.valid_flags |= PPE_ACL_RULE_MATCH_TYPE_SIP_VALID;
+				memcpy(&rule->rules[PPE_ACL_RULE_MATCH_TYPE_SIP].rule.sip.ip, trigger_rule->src_ip, sizeof(trigger_rule->src_ip));
+				rule->rules[PPE_ACL_RULE_MATCH_TYPE_SIP].rule.sip.ip_type = PPE_ACL_IP_TYPE_V6;
+				rule->valid_flags |= PPE_ACL_RULE_MATCH_TYPE_SIP_VALID;
 			}
 
 			if ((trigger_rule->valid_flags & NETSTANDBY_EXIT_TRIGGER_RULE_DES_IP_VALID) == NETSTANDBY_EXIT_TRIGGER_RULE_DES_IP_VALID) {
-				memcpy(&rule.rules[PPE_ACL_RULE_MATCH_TYPE_DIP].rule.dip.ip, trigger_rule->dest_ip, sizeof(trigger_rule->dest_ip));
-				rule.rules[PPE_ACL_RULE_MATCH_TYPE_DIP].rule.dip.ip_type = PPE_ACL_IP_TYPE_V6;
-				rule.valid_flags |= PPE_ACL_RULE_MATCH_TYPE_DIP_VALID;
+				memcpy(&rule->rules[PPE_ACL_RULE_MATCH_TYPE_DIP].rule.dip.ip, trigger_rule->dest_ip, sizeof(trigger_rule->dest_ip));
+				rule->rules[PPE_ACL_RULE_MATCH_TYPE_DIP].rule.dip.ip_type = PPE_ACL_IP_TYPE_V6;
+				rule->valid_flags |= PPE_ACL_RULE_MATCH_TYPE_DIP_VALID;
 			}
 
 		} else if ((trigger_rule->valid_flags & NETSTANDBY_EXIT_TRIGGER_RULE_IPV4) == NETSTANDBY_EXIT_TRIGGER_RULE_IPV4) {
 			if ((trigger_rule->valid_flags & NETSTANDBY_EXIT_TRIGGER_RULE_SRC_IP_VALID) == NETSTANDBY_EXIT_TRIGGER_RULE_SRC_IP_VALID) {
-				memcpy(&rule.rules[PPE_ACL_RULE_MATCH_TYPE_SIP].rule.sip.ip[0], &trigger_rule->src_ip[0], sizeof(trigger_rule->src_ip[0]));
-				rule.rules[PPE_ACL_RULE_MATCH_TYPE_SIP].rule.sip.ip_type = PPE_ACL_IP_TYPE_V4;
-				rule.valid_flags |= PPE_ACL_RULE_MATCH_TYPE_SIP_VALID;
+				memcpy(&rule->rules[PPE_ACL_RULE_MATCH_TYPE_SIP].rule.sip.ip[0], &trigger_rule->src_ip[0], sizeof(trigger_rule->src_ip[0]));
+				rule->rules[PPE_ACL_RULE_MATCH_TYPE_SIP].rule.sip.ip_type = PPE_ACL_IP_TYPE_V4;
+				rule->valid_flags |= PPE_ACL_RULE_MATCH_TYPE_SIP_VALID;
 			}
 
 			if ((trigger_rule->valid_flags & NETSTANDBY_EXIT_TRIGGER_RULE_DES_IP_VALID) == NETSTANDBY_EXIT_TRIGGER_RULE_DES_IP_VALID) {
-				memcpy(&rule.rules[PPE_ACL_RULE_MATCH_TYPE_DIP].rule.dip.ip[0], &trigger_rule->dest_ip[0], sizeof(trigger_rule->dest_ip[0]));
-				rule.rules[PPE_ACL_RULE_MATCH_TYPE_DIP].rule.dip.ip_type = PPE_ACL_IP_TYPE_V4;
-				rule.valid_flags |= PPE_ACL_RULE_MATCH_TYPE_DIP_VALID;
+				memcpy(&rule->rules[PPE_ACL_RULE_MATCH_TYPE_DIP].rule.dip.ip[0], &trigger_rule->dest_ip[0], sizeof(trigger_rule->dest_ip[0]));
+				rule->rules[PPE_ACL_RULE_MATCH_TYPE_DIP].rule.dip.ip_type = PPE_ACL_IP_TYPE_V4;
+				rule->valid_flags |= PPE_ACL_RULE_MATCH_TYPE_DIP_VALID;
 			}
 		}
 
-		rule.stype = PPE_ACL_RULE_SRC_TYPE_DEV;
-		memcpy((void *)rule.src.dev_name, (void *)dev->name, sizeof(dev->name));
-		rule.action.fwd_cmd = PPE_ACL_FWD_CMD_REDIR;
-		rule.action.flags |= PPE_ACL_RULE_ACTION_FLAG_FW_CMD;
-		rule.cmn.cmn_flags |= PPE_ACL_RULE_CMN_FLAG_NO_RULEID | PPE_ACL_RULE_CMN_FLAG_METADATA_EN;
+		rule->dev_type = PPE_ACL_RULE_DEV_TYPE_SRC_DEV;
+		memcpy((void *)rule->dev.dev_name, (void *)dev->name, sizeof(dev->name));
+		rule->action.fwd_cmd = PPE_ACL_FWD_CMD_REDIR;
+		rule->action.flags |= PPE_ACL_RULE_ACTION_FLAG_FW_CMD;
+		rule->cmn.cmn_flags |= PPE_ACL_RULE_CMN_FLAG_NO_RULEID | PPE_ACL_RULE_CMN_FLAG_METADATA_EN;
 	}
 
-	status = ppe_acl_rule_create(&rule);
+	status = ppe_acl_rule_create(rule);
 	if (status == PPE_ACL_RET_SUCCESS) {
 		netstandby_info("%s: PPE ACL create success\n", __func__);
 	} else {
 		netstandby_warn("create rule in ppe driver failed, error = %d\n", status);
 	}
 
-	if (!ppe_acl_rule_callback_register(rule.rule_id, netstandby_acl_process_buf, NULL)) {
-		netstandby_acl_rule_destroy(rule.rule_id);
+	if (!ppe_acl_rule_callback_register(rule->rule_id, netstandby_acl_process_buf, NULL)) {
+		netstandby_acl_rule_destroy(rule->rule_id);
+		kfree(rule);
 		netstandby_warn("Callback register with ACL failed for network standby\n");
 		return NETSTANDBY_ACL_REGISTER_FAIL;
 	}
 
-	info->acl_id[rule_idx] = rule.rule_id;
+	info->acl_id[rule_idx] = rule->rule_id;
 	info->is_acl_valid = true;
 
+	kfree(rule);
 	return NETSTANDBY_SUCCESS;
 }
