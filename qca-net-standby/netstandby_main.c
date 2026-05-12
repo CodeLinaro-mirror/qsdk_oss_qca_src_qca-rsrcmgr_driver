@@ -83,10 +83,6 @@ static inline enum netstandby_iface_type netstandby_get_dev_type(char *name, str
 		return NETSTANDBY_IFACE_TYPE_NSS;
 	} else if (dev->ieee80211_ptr) {
 		dev_put(dev);
-#ifdef RM_QCA_PROP
-		if (port_id < 0)
-			return NETSTANDBY_IFACE_TYPE_MAX;
-#endif
 		return NETSTANDBY_IFACE_TYPE_WIFI;
 	} else if (port_id < 0) {
 		dev_put(dev);
@@ -432,23 +428,6 @@ enum netstandby_nl_ret netstandby_init_msg_send(struct netstandby_nl_msg *nl_msg
 			}
 
 		}
-#ifdef RM_QCA_PROP
-		else if (i == NETSTANDBY_IFACE_TYPE_WIFI) {
-			info = &gbl_ctx->info[NETSTANDBY_SUBSYSTEM_TYPE_WIFI];
-			info->init_info.enter_cmp_cb = netstandby_enter_completion_event;
-			info->init_info.exit_cmp_cb = netstandby_exit_completion_event;
-			info->init_info.trigger_cb = netstandby_trigger_completion_event;
-			info->type = NETSTANDBY_IFACE_TYPE_WIFI;
-			info->nl_sock = nl_sock;
-			info->pid = rule->msg.init.pid;
-
-			status = netstandby_wifi_get_and_register_cb(&info->init_info);
-			if (status != NETSTANDBY_SUCCESS) {
-				netstandby_warn("WIFI network callback register callback failed\n");
-				return NETSTANDBY_NL_RET_FAIL;
-			}
-		}
-#endif
 
 		else if (i == NETSTANDBY_IFACE_TYPE_PLATFORM) {
 			info = &gbl_ctx->info[NETSTANDBY_SUBSYSTEM_TYPE_PLATFORM];
@@ -605,11 +584,7 @@ enum netstandby_nl_ret netstandby_enter_msg_send(struct netstandby_nl_msg *nl_ms
 			}
 		}
 	}
-#ifdef RM_QCA_PROP
-	else if (nl_msg->type == NETSTANDBY_SUBSYSTEM_TYPE_WIFI) {
-		info = &gbl_ctx->info[NETSTANDBY_SUBSYSTEM_TYPE_WIFI];
-	}
-#endif
+
 	else if (nl_msg->type == NETSTANDBY_SUBSYSTEM_TYPE_PLATFORM) {
 		info = &gbl_ctx->info[NETSTANDBY_SUBSYSTEM_TYPE_PLATFORM];
 	}

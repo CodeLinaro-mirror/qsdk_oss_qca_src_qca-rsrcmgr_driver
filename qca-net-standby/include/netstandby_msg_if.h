@@ -22,10 +22,6 @@
 #define __NETSTANDBY_MSG_IF_H
 #include <linux/version.h>
 
-#ifdef RM_QCA_PROP
-#include <linux/netstandby.h>
-#endif
-
 #define NETSTANDBY_ENTER_NSS_FLAG_ACL_ID 0x1
 #define NETSTANDBY_ENTER_NSS_FLAG_ACL_TUPLE 0x2
 #define NETSTANDBY_ENTER_NSS_FLAG_ACL_DEFAULT 0x4
@@ -74,9 +70,7 @@ struct netstandby_trigger_rule {
 	uint32_t dest_ip[4];                    /**< Destination IP address */
 	uint8_t dmac[6];                        /**< Destination MAC address */
 	int protocol;                           /**< Protocol */
-#ifndef RM_QCA_PROP
 	int wifi_protocol;                      /**< WiFi Protocol for open profiles */
-#endif
 };
 
 /*
