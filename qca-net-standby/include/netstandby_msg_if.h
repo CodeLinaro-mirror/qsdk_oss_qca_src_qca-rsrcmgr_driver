@@ -29,7 +29,7 @@
 #define NETSTANDBY_ENTER_NSS_FLAG_SWITCH_PORT_ALL 0x10
 #define NETSTANDBY_ENTER_NSS_FLAG_SWITCH_PORT_NONE 0x20
 
-#ifndef RM_QCA_256M_PROFILE
+#if defined(NSS_TELEMETRY_SUPPORT)
 #ifndef __KERNEL__
 #define NR_CPUS 4
 #endif /* Kernel */
@@ -41,7 +41,7 @@
 #else
 #define NETSTANDBY_MAX_ETH_PORTS	6	/* Alder board */
 #endif /* ETH Ports */
-#endif /* !RM_QCA_256M_PROFILE */
+#endif /* defined(NSS_TELEMETRY_SUPPORT) */
 
 /*
  * We are reserving below netlink number to create a kernel netlink socket
@@ -53,9 +53,7 @@
 /* Config file name is in following format: wlanX:<filepath> */
 #define NETSTANDBY_MSG_CONF_FILENAME_MAX 256
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0))
 #define NETSTANDBY_MSG_WIFI_INVALID_LINK_ID -1
-#endif
 
 #define NETSTANDBY_ACL_COUNT_MAX	8
 
@@ -94,12 +92,10 @@ struct netstandby_conf_file {
 /*
  * netstandby_wifi_info()
  */
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0))
 struct netstandby_wifi_info {
 	int link_id[NETSTANDBY_MSG_MAX_INTERFACES];
 	int link_id_cnt;
 };
-#endif
 
 /*
  * netstandby_enter_msg()
@@ -110,9 +106,7 @@ struct netstandby_enter_msg {
 	char designated_wakeup_intf[NETSTANDBY_MSG_MAX_INTERFACES][NETSTANDBY_MSG_IFNAME_MAX];	/**< List of designated interface names for trigger based wakeup */
 	int iface_cnt;		/**< Number of designated wakeup interfaces configured */
 	struct netstandby_conf_file *conf_file; /**< Linked list of config files */
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0))
 	struct netstandby_wifi_info wifi_info;
-#endif
 };
 
 /*
@@ -127,12 +121,12 @@ struct netstandby_exit_msg {
  */
 struct netstandby_init_msg {
 	pid_t pid;			/**< PID of the user daemon process that runs the netstandy state machine */
-#ifndef RM_QCA_256M_PROFILE
+#if defined(NSS_TELEMETRY_SUPPORT)
 	uint32_t nss_sampling_timer;	/**< NSS sampling timer value in seconds for sending the stats */
 	char wan_intf[NETSTANDBY_MAX_ETH_PORTS][NETSTANDBY_MSG_IFNAME_MAX];	/* WAN iface for ignoring the neigh add/delete events
 											   in telemetry stats */
 	int wan_iface_cnt;	/**< Number of WAN ifaces */
-#endif /* !RM_QCA_256M_PROFILE */
+#endif /* defined(NSS_TELEMETRY_SUPPORT) */
 };
 
 /*
@@ -150,7 +144,7 @@ struct netstandby_rule {
 	} msg;
 };
 
-#ifndef RM_QCA_256M_PROFILE
+#if defined(NSS_TELEMETRY_SUPPORT)
 /*
  * netstandby_lan_client_telemetry_type
  *	Lan client telemetry bucket
@@ -226,7 +220,7 @@ struct netstandby_erp_nss_telemetry {
 	uint64_t num_of_nf_ct;	/** < Number of conntrack entries in netfilter conntrack table */
 	struct netstandby_erp_ct_data_flows ct_data_flows;	/** < Number of important ct data flows in prev and curr iteration */
 };
-#endif /* !RM_QCA_256M_PROFILE */
+#endif /* defined(NSS_TELEMETRY_SUPPORT) */
 
 #endif /* __NETSTANDBY_MSG_IF_H */
 

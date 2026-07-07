@@ -23,7 +23,7 @@
 #include <linux/tick.h>
 #include <linux/kernel_stat.h>
 
-#ifndef RM_QCA_256M_PROFILE
+#if defined(NSS_TELEMETRY_SUPPORT)
 #define NETSTANDBY_DNS_PORT	53
 #define NETSTANDBY_MCAST_IPV4_ALLHOST_ADDR   0xe0000001 /* 224.0.0.1 */
 #define NETSTANDBY_MCAST_IPV4_SSDP_ADDR	0xeffffffa /* 239.255.255.250 */
@@ -316,4 +316,4 @@ void netstandby_nss_sampling_work_cb(struct work_struct *work)
 				"again to ERP un till standby is loaded again\n");
 	}
 }
-#endif
+#endif /* defined(NSS_TELEMETRY_SUPPORT) */
