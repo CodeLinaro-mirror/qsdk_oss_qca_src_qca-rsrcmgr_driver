@@ -274,7 +274,7 @@ void netstandby_exit_completion_event(void *app_data, struct netstandby_event_co
 	kfree(ns_msg_info);
 }
 
-#ifndef RM_QCA_256M_PROFILE
+#if defined(NSS_TELEMETRY_SUPPORT)
 /*
  * netstandby_dump_nss_telemetry
  * 	Dump the NSS telemetry
@@ -359,7 +359,7 @@ bool netstandby_nss_telemetry_to_rm(struct netstandby_erp_nss_telemetry *nss_tel
 	return true;
 }
 
-#endif /* !RM_QCA_256M_PROFILE */
+#endif /* defined(NSS_TELEMETRY_SUPPORT) */
 
 /*
  * netstandby_deinit_msg_send()
@@ -376,11 +376,11 @@ enum netstandby_nl_ret netstandby_deinit_msg_send(struct netstandby_nl_msg *nl_m
 		return NETSTANDBY_NL_RET_FAIL;
 	}
 
-#ifndef RM_QCA_256M_PROFILE
+#if defined(NSS_TELEMETRY_SUPPORT)
 	if (gbl_ctx->nss_sample.sampling_time_millisec) {
 		cancel_delayed_work_sync(&gbl_ctx->nss_sample.sampling_work);
 	}
-#endif /* !RM_QCA_256M_PROFILE */
+#endif /* defined(NSS_TELEMETRY_SUPPORT) */
 
 	netlink_kernel_release(info->nl_sock);
 	info->nl_sock = NULL;
@@ -446,7 +446,7 @@ enum netstandby_nl_ret netstandby_init_msg_send(struct netstandby_nl_msg *nl_msg
 		}
 	}
 
-#ifndef RM_QCA_256M_PROFILE
+#if defined(NSS_TELEMETRY_SUPPORT)
 	if (rule->msg.init.nss_sampling_timer)  {
 		gbl_ctx->nss_sample.sampling_time_millisec = (SECS_TO_MILLI_SECS * rule->msg.init.nss_sampling_timer);
 		schedule_delayed_work(&gbl_ctx->nss_sample.sampling_work,
@@ -459,7 +459,7 @@ enum netstandby_nl_ret netstandby_init_msg_send(struct netstandby_nl_msg *nl_msg
 		gbl_ctx->wan_iface_cnt = rule->msg.init.wan_iface_cnt;
 		netstandby_info("ERP service is enabled with sample timer as %d\n", rule->msg.init.nss_sampling_timer);
 	}
-#endif /* !RM_QCA_256M_PROFILE */
+#endif /* defined(NSS_TELEMETRY_SUPPORT) */
 
 	nl_msg->ret = NETSTANDBY_NL_RET_SUCCESS;
 	return NETSTANDBY_NL_RET_SUCCESS;

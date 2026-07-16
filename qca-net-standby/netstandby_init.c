@@ -39,9 +39,9 @@ static int __init netstandby_module_init(void)
 	struct netstandby_gbl_ctx *gbl_ctx = &gbl_netstandby_ctx;
 	netstandby_nl_cmn_init();
 	INIT_DELAYED_WORK(&gbl_ctx->trigger_work, netstandby_trigger_work);
-#ifndef RM_QCA_256M_PROFILE
+#if defined(NSS_TELEMETRY_SUPPORT)
 	INIT_DELAYED_WORK(&gbl_ctx->nss_sample.sampling_work, netstandby_nss_sampling_work_cb);
-#endif /* !RM_QCA_256M_PROFILE */
+#endif /* defined(NSS_TELEMETRY_SUPPORT) */
 	gbl_ctx->iface_configured = false;
 
 	return 0;

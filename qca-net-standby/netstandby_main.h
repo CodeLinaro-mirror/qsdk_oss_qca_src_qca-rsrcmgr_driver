@@ -111,7 +111,7 @@ struct netstandby_system_info {
 	netstandby_ptr_t sock_data;
 };
 
-#ifndef RM_QCA_256M_PROFILE
+#if defined(NSS_TELEMETRY_SUPPORT)
 /*
  * netstandby_erp_eth_sample
  * 	Struct for maintaining Ethenert iface stats
@@ -148,7 +148,7 @@ struct netstandby_nss_erp_sample {
 	struct netstandby_erp_eth_sample curr_eth_sample[NSS_DP_MAX_INTERFACES-1];	/** < Holds the stats of all eth ifaces */
 	struct netstandby_erp_cpuutil_sample curr_cpuutil_sample[NR_CPUS];	/** < Holds the non idle of each CPU in the sample time */
 };
-#endif /* !RM_QCA_256M_PROFILE */
+#endif /* defined(NSS_TELEMETRY_SUPPORT) */
 
 /*
  * netstandby_gbl_ctx
@@ -163,26 +163,26 @@ struct netstandby_gbl_ctx {
 	bool iface_configured;
 	bool cli_based_wakeup;
 	bool is_acl_default;
-#ifndef RM_QCA_256M_PROFILE
+#if defined(NSS_TELEMETRY_SUPPORT)
 	struct netstandby_nss_erp_sample nss_sample;	/** < Maintains the NSS sampling config & NSS algo params */
 	struct nss_dp_eth_netdev_info ethinfo[NSS_DP_MAX_INTERFACES-1];	/** < Holds the devlist of NSS */
 	char wan_intf[NETSTANDBY_MAX_ETH_PORTS][NETSTANDBY_MSG_IFNAME_MAX];	/** < WAN iface */
 	int wan_iface_cnt;	/** < Number of WAN ifaces */
-#endif /* !RM_QCA_256M_PROFILE */
+#endif /* defined(NSS_TELEMETRY_SUPPORT) */
 };
 
 void netstandby_trigger_work(struct work_struct *work);
-#ifndef RM_QCA_256M_PROFILE
+#if defined(NSS_TELEMETRY_SUPPORT)
 void netstandby_nss_sampling_work_cb(struct work_struct *work);
-#endif /* !RM_QCA_256M_PROFILE */
+#endif /* defined(NSS_TELEMETRY_SUPPORT) */
 
 /* Message send API(s) invoked by netlink layer */
 enum netstandby_nl_ret netstandby_init_msg_send(struct netstandby_nl_msg *nl_msg);
 enum netstandby_nl_ret netstandby_enter_msg_send(struct netstandby_nl_msg *nl_msg);
 enum netstandby_nl_ret netstandby_exit_msg_send(struct netstandby_nl_msg *nl_msg);
 enum netstandby_nl_ret netstandby_deinit_msg_send(struct netstandby_nl_msg *nl_msg);
-#ifndef RM_QCA_256M_PROFILE
+#if defined(NSS_TELEMETRY_SUPPORT)
 bool netstandby_nss_telemetry_to_rm(struct netstandby_erp_nss_telemetry *nss_telemetry);
-#endif /* !RM_QCA_256M_PROFILE */
+#endif /* defined(NSS_TELEMETRY_SUPPORT) */
 
 #endif /* __NETSTANDBY_MAIN_H */
